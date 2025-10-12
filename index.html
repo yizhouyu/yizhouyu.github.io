@@ -15,23 +15,35 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #dc2626 100%);
+            color: #2d3748;
+            background: #f7fafc;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode {
+            background: #1a202c;
+            color: #e2e8f0;
         }
 
         .container {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             max-width: 800px;
             width: 100%;
             padding: 60px 40px;
             animation: fadeIn 0.6s ease-in;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        body.dark-mode .container {
+            background: #2d3748;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
 
         @keyframes fadeIn {
@@ -49,7 +61,6 @@
             text-align: center;
             margin-bottom: 40px;
             padding-bottom: 30px;
-            border-bottom: 2px solid #f0f0f0;
         }
 
         h1 {
@@ -57,6 +68,10 @@
             color: #2d3748;
             margin-bottom: 10px;
             font-weight: 700;
+        }
+
+        body.dark-mode h1 {
+            color: #f7fafc;
         }
 
         .subtitle {
@@ -71,6 +86,10 @@
             font-size: 1.1em;
         }
 
+        body.dark-mode .tagline {
+            color: #a0aec0;
+        }
+
         .section {
             margin: 30px 0;
         }
@@ -83,10 +102,34 @@
             border-left: 4px solid #3b82f6;
         }
 
+        body.dark-mode .section h2 {
+            color: #f7fafc;
+        }
+
         .section p {
             color: #4a5568;
             margin-bottom: 10px;
             line-height: 1.8;
+        }
+
+        body.dark-mode .section p {
+            color: #cbd5e0;
+        }
+
+        .section p strong {
+            color: #2d3748;
+        }
+
+        body.dark-mode .section p strong {
+            color: #e2e8f0;
+        }
+
+        .section p a {
+            color: #3b82f6;
+        }
+
+        body.dark-mode .section p a {
+            color: #63b3ed;
         }
 
         .links {
@@ -137,6 +180,55 @@
             font-weight: 500;
         }
 
+        body.dark-mode .skill-tag {
+            background: #4a5568;
+            color: #e2e8f0;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.5em;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+        }
+
+        body.dark-mode .theme-toggle {
+            background: #2d3748;
+            border-color: #4a5568;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .header {
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        body.dark-mode .header {
+            border-bottom-color: #4a5568;
+        }
+
+        .footer-section {
+            border-top: 2px solid #e2e8f0;
+        }
+
+        body.dark-mode .footer-section {
+            border-top-color: #4a5568;
+        }
+
         @media (max-width: 600px) {
             .container {
                 padding: 40px 25px;
@@ -176,7 +268,7 @@
         <div class="section">
             <h2>About Me</h2>
             <p>
-                I'm a software engineer at Meta, living in Jersey City. Originally from Shanghai, China, I speak
+                I'm a software engineer at Meta, living in Jersey City and working at the New York City office. Originally from Shanghai, China, I speak
                 Chinese (native), English, and French. I work on the AI for Experimentation team within the Central
                 Products org, where I leverage AI to boost productivity in experimentation. I previously interned at
                 Meta before joining full-time. I'm passionate about leveraging AI to solve complex technical
@@ -302,11 +394,35 @@
             </div>
         </div>
 
-        <div class="section" style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #f0f0f0;">
+        <div class="section footer-section" style="text-align: center; margin-top: 40px; padding-top: 30px;">
             <p style="color: #a0aec0; font-size: 0.9em;">
                 <span class="emoji">👋</span> Thanks for visiting!
             </p>
         </div>
     </div>
+
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+        <span id="themeIcon">🌙</span>
+    </button>
+
+    <script>
+        // Check for saved theme preference or default to light mode
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        if (currentTheme === 'dark') {
+            document.body.classList.add('dark-mode');
+            document.getElementById('themeIcon').textContent = '☀️';
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+
+            // Update icon
+            document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+
+            // Save preference
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+    </script>
 </body>
 </html>
