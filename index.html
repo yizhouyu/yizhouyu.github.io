@@ -266,9 +266,15 @@
             font-style: normal;
         }
 
-        .contact-form {
+        .contact-form-container {
             max-width: 600px;
-            margin: 0 auto;
+            margin: 20px auto 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .contact-form {
+            margin-top: 20px;
         }
 
         .form-group {
@@ -452,33 +458,45 @@
         <div class="section">
             <h2>Get In Touch</h2>
             <p style="margin-bottom: 20px;">Have a question or want to connect? Send me a message!</p>
-            <form id="contactForm" action="https://api.web3forms.com/submit" method="POST" class="contact-form">
-                <input type="hidden" name="access_key" value="b1ac57ef-a5b9-40ee-86a0-06d366cd6c24">
-                <input type="hidden" name="subject" value="New message from yizhouyu.github.io">
-                <input type="hidden" name="redirect" value="https://web3forms.com/success">
 
-                <div class="form-group">
-                    <label for="name">Name</label>
-                    <input type="text" id="name" name="name" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="message">Message</label>
-                    <textarea id="message" name="message" rows="5" required></textarea>
-                </div>
-
-                <button type="submit" class="submit-button">
-                    <svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 20px; height: 20px;">
-                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            <div style="text-align: center;">
+                <button id="toggleContactForm" class="link-button" onclick="toggleContactForm()">
+                    <svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                     </svg>
-                    Send Message
+                    Send Me a Message
                 </button>
-            </form>
+            </div>
+
+            <div id="contactFormContainer" class="contact-form-container" style="display: none;">
+                <form id="contactForm" action="https://api.web3forms.com/submit" method="POST" class="contact-form">
+                    <input type="hidden" name="access_key" value="b1ac57ef-a5b9-40ee-86a0-06d366cd6c24">
+                    <input type="hidden" name="subject" value="New message from yizhouyu.github.io">
+                    <input type="hidden" name="redirect" value="https://web3forms.com/success">
+
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Message</label>
+                        <textarea id="message" name="message" rows="5" required></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-button">
+                        <svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 20px; height: 20px;">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                        Send Message
+                    </button>
+                </form>
+            </div>
         </div>
 
         <div class="section">
@@ -539,6 +557,20 @@
 
             // Save preference
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        function toggleContactForm() {
+            const formContainer = document.getElementById('contactFormContainer');
+            const button = document.getElementById('toggleContactForm');
+
+            if (formContainer.style.display === 'none') {
+                formContainer.style.display = 'block';
+                button.textContent = 'Hide Form';
+                button.innerHTML = '<svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 20px; height: 20px;"><path d="M19 13H5v-2h14v2z"/></svg> Hide Form';
+            } else {
+                formContainer.style.display = 'none';
+                button.innerHTML = '<svg fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width: 20px; height: 20px;"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg> Send Me a Message';
+            }
         }
     </script>
 </body>
