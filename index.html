@@ -70,7 +70,9 @@
         }
 
         .header {
-            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 40px;
             margin-bottom: 40px;
             padding-bottom: 30px;
         }
@@ -80,14 +82,18 @@
             height: 200px;
             border-radius: 50%;
             object-fit: cover;
-            margin: 0 auto 20px;
-            display: block;
+            flex-shrink: 0;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             transition: transform 0.3s ease;
         }
 
         .profile-picture:hover {
             transform: scale(1.05);
+        }
+
+        .header-info {
+            flex: 1;
+            text-align: left;
         }
 
         h1 {
@@ -280,6 +286,20 @@
                 width: 100%;
                 justify-content: center;
             }
+
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .header-info {
+                text-align: center;
+            }
+
+            .profile-picture {
+                width: 150px;
+                height: 150px;
+            }
         }
 
         .emoji {
@@ -372,10 +392,12 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="profile.jpg" alt="Yizhou Yu" class="profile-picture">
-            <h1>Yizhou Yu</h1>
-            <div class="subtitle">Software Engineer @ Meta</div>
-            <div class="tagline">Leveraging AI to boost productivity in experimentation</div>
+            <img src="data/profile.jpg" alt="Yizhou Yu" class="profile-picture">
+            <div class="header-info">
+                <h1>Yizhou Yu</h1>
+                <div class="subtitle">Software Engineer @ Meta</div>
+                <div class="tagline">Leveraging AI to boost productivity in experimentation</div>
+            </div>
         </div>
 
         <div class="section">
