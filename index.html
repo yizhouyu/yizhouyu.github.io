@@ -75,6 +75,21 @@
             padding-bottom: 30px;
         }
 
+        .profile-picture {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 0 auto 20px;
+            display: block;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .profile-picture:hover {
+            transform: scale(1.05);
+        }
+
         h1 {
             font-size: 2.5em;
             color: #2d3748;
@@ -357,6 +372,7 @@
 <body>
     <div class="container">
         <div class="header">
+            <img src="profile.jpg" alt="Yizhou Yu" class="profile-picture">
             <h1>Yizhou Yu</h1>
             <div class="subtitle">Software Engineer @ Meta</div>
             <div class="tagline">Leveraging AI to boost productivity in experimentation</div>
