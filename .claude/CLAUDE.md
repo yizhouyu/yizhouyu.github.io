@@ -1,9 +1,54 @@
-# Blog Workflow Documentation
+# CLAUDE.md
 
-## Overview
-This site has a blog section at `/blog` with self-hosted posts on the custom domain `yizhouyu.dev`.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Architecture Decision
+## Repository Overview
+
+Personal website for Yizhou Yu (Software Engineer at Meta). Static site built with vanilla HTML/CSS/JS, hosted on GitHub Pages.
+
+**Live URLs:**
+- Primary: https://yizhouyu.dev
+- Secondary: https://yzyzy.dev (both domains serve same content)
+
+**Repository:** https://github.com/yizhouyu/yizhouyu.github.io
+
+## Site Architecture
+
+This is a static HTML site with no build process. All pages are standalone HTML files with embedded CSS and JavaScript.
+
+**Key sections:**
+- `/index.html` - Main landing page with profile, experience, education, skills
+- `/blog/` - Blog section with posts and search functionality
+- `/weeks/` - "Life in Weeks" visualization
+- `/data/` - Static assets (profile picture, images)
+
+**Shared design system:**
+- Consistent color palette (blue gradient: #3b82f6 to #1e40af)
+- Dark mode toggle (synced via localStorage)
+- Responsive design with mobile breakpoints
+- All pages include Google Analytics (G-T39LJ72QFL) + Cloudflare Analytics
+
+## Development Workflow
+
+### Making Changes
+1. Edit HTML/CSS/JS files directly (no build step)
+2. Test locally by opening HTML files in browser
+3. Commit changes with descriptive messages
+4. Push to GitHub - changes go live automatically via GitHub Pages (2-3 min deploy time)
+
+### Git Commands
+```bash
+git status                    # Check what changed
+git add .                     # Stage all changes
+git commit -m "message"       # Commit with message
+git push                      # Deploy to GitHub Pages
+```
+
+**Commit convention:** Include Claude Code attribution in commits when changes are made via Claude Code.
+
+## Blog System
+
+### Architecture Decision
 - **Chosen approach**: Self-hosted blog at `yizhouyu.dev/blog` (subdirectory)
 - **Rejected alternatives**: Substack, subdomain hosting
 - **Reasoning**:
@@ -84,14 +129,60 @@ Date: October 15, 2025
 Images: [attached in chat]
 ```
 
-## Technical Notes
-- All pages include Google Analytics (G-T39LJ72QFL) and Cloudflare Analytics
-- Theme preference syncs via localStorage
-- Static HTML (no build process needed)
-- Deploys automatically via GitHub Pages
-- Custom domain: yizhouyu.dev (already configured)
+### Technical Implementation
+- All blog pages match main site design system (colors, dark mode, responsive)
+- Search implemented with client-side JavaScript (filters on title)
+- Theme preference syncs with main site via localStorage
+- No database - posts are static HTML files
+- Images stored in `/blog/images/` directory
 
-## Git Workflow
-- Commit format: Descriptive message with Claude Code attribution
-- Push immediately after commit
-- Each post = one commit (includes HTML + images + index update)
+### Git Workflow for Blog Posts
+- Each post = one atomic commit (HTML + images + index update)
+- Commit immediately after creating post
+- Push immediately - auto-deploys to GitHub Pages
+
+## Design System
+
+When creating new pages or sections, maintain consistency:
+
+**Colors:**
+- Primary gradient: `linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)`
+- Background light: `#f7fafc`
+- Background dark: `#1a202c`
+- Text light mode: `#2d3748`
+- Text dark mode: `#e2e8f0`
+- Accent: `#3b82f6`
+
+**Typography:**
+- Font: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif`
+- Line height: `1.6`
+
+**Interactive elements:**
+- Buttons use gradient background with shadow
+- Hover states: `translateY(-2px)` with increased shadow
+- Border radius: `20px` (containers), `50px` (buttons), `12px` (inputs)
+- Transitions: `0.3s ease`
+
+**Dark mode:**
+- Toggle button fixed at top-right
+- Preference stored in localStorage key `theme`
+- All pages check theme on load and sync
+
+## Analytics Integration
+
+All pages must include these tracking scripts in `<head>`:
+
+```html
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-T39LJ72QFL"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-T39LJ72QFL');
+</script>
+
+<!-- Cloudflare Web Analytics -->
+<script defer src='https://static.cloudflareinsights.com/beacon.min.js'
+        data-cf-beacon='{"token": "8502e35b873b4becad641200564f6c41"}'></script>
+```
