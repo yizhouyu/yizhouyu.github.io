@@ -111,7 +111,7 @@
         .post-card {
             background: #f7fafc;
             border-radius: 12px;
-            padding: 30px;
+            overflow: hidden;
             transition: all 0.3s ease;
             border-left: 4px solid #3b82f6;
         }
@@ -125,22 +125,42 @@
             box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
         }
 
-        .post-title {
-            font-size: 1.8em;
-            margin-bottom: 10px;
+        .post-card-link {
+            display: flex;
+            gap: 0;
+            text-decoration: none;
+            color: inherit;
         }
 
-        .post-title a {
+        .post-cover {
+            width: 240px;
+            height: 160px;
+            object-fit: cover;
+            flex-shrink: 0;
+            margin: 20px;
+            border-radius: 8px;
+        }
+
+        .post-card-content {
+            flex: 1;
+            padding: 30px 30px 30px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .post-title {
+            font-size: 1.5em;
+            margin-bottom: 10px;
             color: #2d3748;
-            text-decoration: none;
             transition: color 0.3s ease;
         }
 
-        body.dark-mode .post-title a {
+        body.dark-mode .post-title {
             color: #f7fafc;
         }
 
-        .post-title a:hover {
+        .post-card-link:hover .post-title {
             color: #3b82f6;
         }
 
@@ -233,7 +253,7 @@
             transform: scale(1.1);
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
             .container {
                 padding: 40px 25px;
             }
@@ -242,8 +262,22 @@
                 font-size: 2em;
             }
 
+            .post-card-link {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .post-cover {
+                width: 100%;
+                height: 200px;
+            }
+
+            .post-card-content {
+                padding: 20px;
+            }
+
             .post-title {
-                font-size: 1.5em;
+                font-size: 1.3em;
             }
         }
     </style>
@@ -271,13 +305,16 @@
 
         <div class="posts-list" id="postsList">
             <article class="post-card">
-                <h2 class="post-title">
-                    <a href="posts/vibe-coding-with-claude-code/">I Shipped Three Projects in 48 Hours Using Claude Code (And Wrote Zero Line of Code)</a>
-                </h2>
-                <div class="post-meta">October 19, 2025</div>
-                <div class="post-excerpt">
-                    How I built a YouTube Manager, personal website, and Life in Weeks visualization in one weekend using Claude Code - 137 commits, zero lines of code written by hand.
-                </div>
+                <a href="posts/vibe-coding-with-claude-code/" class="post-card-link">
+                    <img src="posts/vibe-coding-with-claude-code/images/cover.png" alt="Vibe Coding with Claude Code" class="post-cover">
+                    <div class="post-card-content">
+                        <h2 class="post-title">I Shipped Three Projects in 48 Hours Using Claude Code (And Wrote Zero Line of Code)</h2>
+                        <div class="post-meta">October 19, 2025</div>
+                        <div class="post-excerpt">
+                            How I built a YouTube Manager, personal website, and Life in Weeks visualization in one weekend using Claude Code - 137 commits, zero lines of code written by hand.
+                        </div>
+                    </div>
+                </a>
             </article>
 
             <div class="no-results" id="noResults" style="display: none;">
@@ -320,7 +357,7 @@
             let visibleCount = 0;
 
             posts.forEach(post => {
-                const title = post.querySelector('.post-title a').textContent.toLowerCase();
+                const title = post.querySelector('.post-title').textContent.toLowerCase();
 
                 if (title.includes(searchTerm)) {
                     post.style.display = 'block';

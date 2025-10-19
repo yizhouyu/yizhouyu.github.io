@@ -32,6 +32,8 @@
     const footerHTML = `
         <footer class="post-footer">
             <div class="footer-links">
+                <a href="/blog/" class="footer-link" aria-label="Back to Blog">Blog</a>
+                <span class="footer-separator">·</span>
                 <a href="/" class="footer-link" aria-label="Home">Home</a>
                 <span class="footer-separator">·</span>
                 <a href="https://github.com/yizhouyu" target="_blank" rel="noopener noreferrer" class="footer-link" aria-label="GitHub">
