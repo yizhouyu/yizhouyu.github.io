@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T39LJ72QFL"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-T39LJ72QFL');
+    </script>
+
+    <!-- Cloudflare Web Analytics -->
+    <script defer src='https://static.cloudflareinsights.com/beacon.min.js'
+        data-cf-beacon='{"token": "8502e35b873b4becad641200564f6c41"}'></script><!-- End Cloudflare Web Analytics -->
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I Shipped Three Projects in 48 Hours Using Claude Code - Yizhou Yu</title>
+    <meta name="description"
+        content="How I built a YouTube Manager, personal website, and Life in Weeks visualization in one weekend using Claude Code - 137 commits, zero lines of code written by hand.">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%233b82f6'/><stop offset='100%25' style='stop-color:%231e40af'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23grad)'/><text x='50' y='70' font-family='system-ui,sans-serif' font-size='55' font-weight='bold' fill='white' text-anchor='middle'>YY</text></svg>">
+    <link rel="stylesheet" href="../../shared-styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <a href="../../" class="back-link">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+            </svg>
+            Back to Blog
+        </a>
+
+        <article>
+            <header class="post-header">
+                <h1>I Shipped Three Projects in 48 Hours Using Claude Code (And Wrote Zero Line of Code)</h1>
+                <div class="post-meta">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z" />
+                    </svg>
+                    October 19, 2025
+                </div>
+            </header>
+
+            <img src="./images/cover.png" alt="Vibe Coding with Claude Code - Cover Image"
+                style="width: 100%; border-radius: 8px; margin-bottom: 40px;">
+
+            <div class="post-content">
+                <p><strong>What I Built:</strong></p>
+
+                <ul>
+                    <li><a href="https://github.com/yizhouyu/youtube-manager" target="_blank"><strong>YouTube
+                                Manager</strong></a> — AI-powered SEO tool with web UI (54 commits)</li>
+                    <li><strong>My personal page</strong> (<a href="https://yizhouyu.dev"
+                            target="_blank">https://yizhouyu.dev</a>) — Personal site that sat empty since 2017 (45
+                        commits)</li>
+                    <li><strong>Life in Weeks</strong> (<a href="https://yizhouyu.dev/weeks"
+                            target="_blank">https://yizhouyu.dev/weeks</a>) — Interactive timeline for noteworthy life
+                        events (38 commits)</li>
+                </ul>
+
+                <p><strong>137 commits. Zero lines of code written by hand.</strong></p>
+
+                <p>I wrote this post with Claude Code as well — I gave it the GitHub repos to research commit history,
+                    then let it edit its draft via voice dictation.</p>
+
+                <h2>TL;DR - Key Takeaways</h2>
+
+                <p>If you're skimming, here's what matters:</p>
+
+                <ol>
+                    <li><strong>Research overhead → zero</strong>: No more "learn framework X before building Y." Just
+                        ask Claude Code.</li>
+                    <li><strong>The SWE skill that matters most</strong>: Knowing which questions to ask (concurrency,
+                        error handling), not writing syntax.</li>
+                    <li><strong>Claude helps with non-coding tasks too</strong>: Domain purchasing recommendations
+                        (suggested Cloudflare), DNS configuration, deployment setup—all the operational stuff that
+                        usually requires separate research.</li>
+                    <li><strong>Vibe coding ≠ production engineering</strong>: No code review/RFC/oncall concerns = 80%
+                        less friction. This unlocks a different kind of velocity.</li>
+                    <li><strong>Voice + async = game changer</strong>: Dictate features instead of typing → come back →
+                        Claude built it.</li>
+                    <li><strong>Multitasking across projects</strong>: Ran three separate VS Code windows with Claude
+                        Code instances simultaneously.</li>
+                    <li><strong>$100/month Claude Max is worth it</strong> if you have side project ideas that never
+                        materialize due to execution barriers.</li>
+                    <li><strong>The skill gap is narrowing but not closing</strong>: Non-engineers can build functional
+                        apps now. Building robust/secure/scalable systems still requires engineering judgment.</li>
+                    <li><strong>These are personal consumption tools</strong>: Not production-ready apps yet. Building
+                        for production with Claude Code is the next frontier to explore.</li>
+                </ol>
+
+                <p><strong>Still interested? Read on for the detailed story.</strong></p>
+
+                <h2>Why This Matters: The Conversation That Started It All</h2>
+
+                <p>I'm an amateur YouTube creator on the side (travel vlog in Chinese). For years, I've known SEO
+                    matters—optimized titles, descriptions, tags—but I just didn't care enough to invest the time.
+                    Writing good SEO metadata involves a fair amount of effort. So I... didn't do it.</p>
+
+                <p>Last Friday: Conversation with my teammate Gary. He recommended I actually do some SEO for my
+                    videos.<br>
+                    Saturday morning: "Okay, let me put Claude Code to the test."<br>
+                    This wasn't some grand plan. It was: "Can this thing actually solve a real problem I have?"<br>
+                    Spoiler: Yes. And then I got carried away and built two more things.</p>
+
+                <h2>The Projects: How They Actually Evolved</h2>
+
+                <h3>YouTube Manager: From Script to Full Application</h3>
+
+                <p><strong>Saturday morning - The First Task:</strong><br>
+                    "Write me a script to replace all my previous videos' titles and descriptions with SEO-enhanced
+                    versions. Generate suggestions and let me review before applying."<br>
+                    This was the test. Can Claude Code actually understand:</p>
+
+                <ul>
+                    <li>YouTube API authentication</li>
+                    <li>Fetching all my videos</li>
+                    <li>Generating bilingual SEO metadata (Chinese primary, English secondary)</li>
+                    <li>Side-by-side comparison UI</li>
+                    <li>Manual review workflow</li>
+                </ul>
+
+                <p>90 minutes later: fully working CLI tool. OAuth2 authentication, batch processing, beautiful
+                    side-by-side diffs using Rich tables, API rate limiting, video tracking to prevent reprocessing.<br>
+                    I tested it. It worked. The metadata suggestions were actually good.</p>
+
+                <p><strong>Saturday afternoon - The Natural Progression:</strong><br>
+                    "Okay, this works. But I want a web UI for this."<br>
+                    At this point I trusted Claude Code enough to expand scope. The progression felt natural:</p>
+
+                <ol>
+                    <li>Prove the core concept (SEO script) ✓</li>
+                    <li>Build a better interface (web UI)</li>
+                    <li>Add complementary features (analytics, thumbnails, upload workflow)</li>
+                </ol>
+
+                <p>By Sunday: full-stack Flask app with analytics dashboard, smart upload workflow, AI-powered thumbnail
+                    generation, real-time progress tracking.</p>
+
+                <img src="./images/youtube-manager-1-select-files.png" alt="YouTube Manager Step 1 - Select files for upload with smart file picker">
+
+                <img src="./images/youtube-manager-2-choose-metadata.png" alt="YouTube Manager Step 2 - Choose your metadata from AI-generated SEO options">
+
+                <img src="./images/youtube-manager-3-review-upload.png" alt="YouTube Manager Step 3 - Review metadata and upload to YouTube">
+
+                <p><strong>This organic evolution is important.</strong> I didn't plan to build a full web app. I
+                    started with the minimum viable thing (a script), validated it worked, then kept going because the
+                    friction was so low.</p>
+
+                <h3>Personal Website: The 8-Year Procrastination</h3>
+
+                <p><strong>Background:</strong> Created <code>yizhouyu.github.io</code> on August 1, 2017. Last commit:
+                    August 1, 2017 @ 2:41 PM. It sat empty because learning HTML/CSS felt like a chore.</p>
+
+                <p><strong>Saturday 10:03 PM:</strong> "Claude, build me a personal website."<br>
+                    <strong>What shipped:</strong> Modern responsive site with experience timeline, contact form,
+                    analytics, light/dark mode, custom domain setup.
+                </p>
+
+                <p><strong>Then the non-coding help:</strong> "How do I get a custom domain?"<br>
+                    This is where Claude Code showed its versatility beyond just writing code. It didn't just say "go
+                    buy a domain"—it walked me through the entire process:</p>
+
+                <ol>
+                    <li><strong>Before I even bought:</strong> Suggested where to buy the domain. Recommended Cloudflare
+                        as registrar (better pricing, integrated DNS management).</li>
+                    <li><strong>After purchase:</strong> Step-by-step DNS configuration instructions specific to GitHub
+                        Pages.</li>
+                    <li><strong>SSL setup:</strong> Explained how GitHub handles certificates automatically.</li>
+                    <li><strong>Verification:</strong> How to confirm everything's working correctly.</li>
+                </ol>
+
+                <p>20 minutes later: live at <a href="https://yizhouyu.dev" target="_blank">yizhouyu.dev</a> (and <a
+                        href="https://yzyzy.dev" target="_blank">yzyzy.dev</a> since I bought 2 domains).</p>
+
+                <img src="./images/personal-website.png" alt="Personal website at yizhouyu.dev - Modern responsive design with experience timeline and dark mode support">
+
+                <p><strong>The insight:</strong> Claude Code isn't just a coding tool—it's a full stack development
+                    partner. It handles the operational stuff (domain registration, DNS, deployment) that usually
+                    requires separate Google searches and documentation reading.</p>
+
+                <p>BTW my 2 domains cost $12 each per year. They would've cost a lot more if I wanted to use .io or .ai.
+                </p>
+
+                <h3>Life in Weeks: More Than Just a Fork</h3>
+
+                <p>Ran Ding (former colleague) has this beautiful <a href="https://rd.me/weeks" target="_blank">Life in
+                        Weeks visualization</a> and open-sourced the code. I didn't just fork it—I wanted to customize
+                    it heavily with my own data and features.</p>
+
+                <p><strong>The Challenge:</strong><br>
+                    My travel data lives in Notion (5-6 trips per year since 2022). I could manually copy it... or I
+                    could ask Claude to set up a Notion MCP server to import it automatically.<br>
+                    <strong>Sunday 11:51 PM:</strong> "Can you set up a Notion MCP server to import my travel data?"<br>
+                    I'd never used MCP. Didn't know how it worked.<br>
+                    Claude: searched Notion MCP docs → explained auth flow → wrote integration → imported all events.
+                    Zero guidance from me beyond the initial ask.
+                </p>
+
+                <p><strong>Also: Major Customizations</strong><br>
+                    This wasn't a simple fork-and-deploy. I added significant new features:</p>
+
+                <p><strong>Event Category Filtering:</strong></p>
+
+                <ul>
+                    <li>Grouped timeline events into categories: Personal, Education, Career, Travel, World Events</li>
+                    <li>Built interactive filter UI with chip-style toggles</li>
+                    <li>Users can show/hide entire categories to focus on what matters to them</li>
+                    <li>Example: Toggle off "World Events" to see just your personal timeline</li>
+                </ul>
+
+                <p><strong>Enhanced UX:</strong></p>
+
+                <ul>
+                    <li>Rich tooltips showing month/year on hover for any week cell</li>
+                    <li>Clickable links auto-detected in event descriptions</li>
+                    <li>Improved tooltip positioning and display in compact mode</li>
+                    <li>Added custom "YY" favicon matching my main site branding</li>
+                </ul>
+
+                <p><strong>Deployment & Infrastructure:</strong></p>
+
+                <ul>
+                    <li>Deployed to Vercel (Claude's suggestion—I'd never used Vercel before)</li>
+                    <li>Set up Cloudflare Worker proxy for clean URL routing (<a href="https://yizhouyu.dev/weeks"
+                            target="_blank">yizhouyu.dev/weeks</a>)</li>
+                    <li>Configured environment variables for privacy-protected dates</li>
+                </ul>
+
+                <p>The result: <a href="https://yizhouyu.dev/weeks" target="_blank">yizhouyu.dev/weeks</a></p>
+
+                <img src="./images/life-in-weeks-timeline.png" alt="Life in Weeks - Interactive timeline visualization showing life events across different categories">
+
+                <img src="./images/life-in-weeks-filters.png" alt="Life in Weeks - Category filtering interface with toggles for Personal, Education, Career, Travel, and World Events">
+
+                <p><strong>Key learning:</strong> MCP + Web Search = autonomous problem solving. Claude wasn't executing
+                    my plan—it was researching, planning, and executing on its own. I was treating Claude as the
+                    developer and myself as the user, just with enough technical background to ask clarifying questions.
+                </p>
+
+                <h2>What Makes This Different: Key Insights</h2>
+
+                <h3>1. Claude Code Handles More Than Just Code</h3>
+
+                <p>This weekend showed me that Claude Code's value extends far beyond writing code:</p>
+
+                <p><strong>Coding:</strong></p>
+
+                <ul>
+                    <li>Wrote Python, JavaScript, HTML, CSS</li>
+                    <li>Set up Flask app structure</li>
+                    <li>Integrated YouTube API, Claude API, Notion API</li>
+                    <li>Implemented OAuth2 flows</li>
+                </ul>
+
+                <p><strong>Infrastructure & Operations:</strong></p>
+
+                <ul>
+                    <li>Recommended Cloudflare for domain registration</li>
+                    <li>Provided DNS configuration instructions</li>
+                    <li>Explained GitHub Pages deployment</li>
+                    <li>Set up Vercel deployment with custom routing</li>
+                    <li>Configured Cloudflare Workers for URL proxying</li>
+                </ul>
+
+                <p><strong>Architecture & Design Decisions:</strong></p>
+
+                <ul>
+                    <li>"Should this be Flask or static site?" → discussed tradeoffs</li>
+                    <li>"How should we handle API rate limits?" → implemented backoff strategy</li>
+                    <li>"Where should API keys live?" → explained server-side env variables</li>
+                </ul>
+
+                <p><strong>Research & Documentation:</strong></p>
+
+                <ul>
+                    <li>Found Notion MCP documentation via web search</li>
+                    <li>Researched OAuth2 best practices</li>
+                    <li>Looked up YouTube API quota limits</li>
+                </ul>
+
+                <p>In traditional development, each of these areas would require separate research, different tools,
+                    context switching. With Claude Code, it's all in one conversation.</p>
+
+                <p><strong>This is the real productivity unlock:</strong> Not just faster coding, but eliminating the
+                    overhead of figuring out everything else.</p>
+
+                <h3>2. Multitasking Across Projects Actually Works</h3>
+
+                <p>Here's something that surprised me: <strong>I ran three VS Code windows with separate Claude Code
+                        instances simultaneously.</strong></p>
+
+                <p>Saturday night workflow:</p>
+
+                <ul>
+                    <li><strong>Window 1:</strong> YouTube Manager web UI development</li>
+                    <li><strong>Window 2:</strong> Personal website customization</li>
+                    <li><strong>Window 3:</strong> Life in Weeks customization</li>
+                </ul>
+
+                <p>I'd give instructions to one window, switch to another while it worked, come back to review. Natural
+                    context switching between projects.</p>
+
+                <p><strong>This is a fundamentally different development experience.</strong> Normally, context
+                    switching between projects is expensive—you lose momentum, forget where you were, need to rebuild
+                    mental models.</p>
+
+                <p>With Claude Code, each instance maintains its own context. I could work on whichever project felt
+                    interesting in the moment. Low friction, high velocity.</p>
+
+                <p><strong>Important caveat:</strong> There are probably many hidden features and best practices I
+                    haven't discovered yet. This weekend was my first real usage. I'm incentivized to learn more—the
+                    initial experience was compelling enough that I want to get better at using the tool.</p>
+
+                <h3>3. Research Overhead Goes to Zero</h3>
+
+                <p><strong>Traditional workflow for building a website:</strong></p>
+
+                <ol>
+                    <li>Research frameworks (Next.js? Astro? SvelteKit?)</li>
+                    <li>Learn chosen framework</li>
+                    <li>Research CSS solutions (Tailwind? Styled-components?)</li>
+                    <li>Learn deployment platforms (Vercel? Netlify? GitHub Pages?)</li>
+                    <li>Figure out DNS configuration</li>
+                    <li>Actually build the thing</li>
+                </ol>
+
+                <p>Steps 1-5 can take <strong>days</strong>.</p>
+
+                <p><strong>With Claude Code:</strong> "Build me a website."<br>
+                    Claude picks the stack, writes the code, explains deployment. Research phase:
+                    <strong>eliminated</strong>.
+                </p>
+
+                <p>The UI matters too: everything in one interface. No context switching between docs, Stack Overflow,
+                    terminal, editor. Just conversation → code → deployed.</p>
+
+                <h3>4. Vibe Coding ≠ Production Engineering (And That's the Point)</h3>
+
+                <p>At work, code is heavily scrutinized:</p>
+
+                <ul>
+                    <li>Detailed diff summaries (why, not just what)</li>
+                    <li>Comprehensive test plans</li>
+                    <li>Code review feedback loops</li>
+                    <li>Oncall concerns and reliability standards</li>
+                    <li>Team conventions and style guides</li>
+                </ul>
+
+                <p>This is <strong>necessary for production systems at scale.</strong> But it means <strong>most time
+                        isn't spent coding—it's spent on meta-work around coding.</strong></p>
+
+                <p><strong>Vibe coding with Claude removes all of that:</strong></p>
+
+                <ul>
+                    <li>No code review</li>
+                    <li>No RFC process</li>
+                    <li>No explaining decisions to anyone</li>
+                    <li>No production reliability concerns</li>
+                    <li>Code for personal consumption only</li>
+                </ul>
+
+                <p>This eliminates ~80% of the friction. What remains is pure building. <strong>137 commits in 48
+                        hours</strong>—impossible in normal work contexts.</p>
+
+                <p><strong>Important distinction:</strong> All three projects are for <strong>personal
+                        consumption</strong>. I haven't built anything production-ready with Claude Code yet—that's
+                    something to explore in the future. The stakes are low, which is why this velocity is possible.</p>
+
+                <h3>5. The SWE Skill That Still Matters: Knowing Which Questions to Ask</h3>
+
+                <p>Claude Code didn't make engineering background irrelevant—it changed how it's valuable.</p>
+
+                <p><strong>My role this weekend:</strong> I treated Claude as the developer and myself as the user. The
+                    difference is I had enough technical background to ask clarifying questions when needed.</p>
+
+                <p><strong>Examples from this weekend:</strong></p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Question</th>
+                            <th>Why It Mattered</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>"Are these API calls parallel or sequential?"</td>
+                            <td>Identified performance bottleneck → 70% latency reduction</td>
+                        </tr>
+                        <tr>
+                            <td>"What happens if YouTube API times out during upload?"</td>
+                            <td>Added retry logic before it became a problem</td>
+                        </tr>
+                        <tr>
+                            <td>"Are we exposing API keys in the client bundle?"</td>
+                            <td>Security catch before shipping</td>
+                        </tr>
+                        <tr>
+                            <td>"Should this be a Flask app or a static site?"</td>
+                            <td>Architecture decision based on API endpoint needs</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p>The skill that mattered most wasn't coding—it was <strong>knowing which questions to ask</strong>.
+                    Understanding how components interact, where bottlenecks happen, what failure modes exist.</p>
+
+                <p>Junior engineers can absolutely use Claude Code productively. But experience helps guide it toward
+                    robust solutions faster.</p>
+
+                <h3>6. Voice Dictation + Async = The Killer Combo</h3>
+
+                <p>I use <a href="https://superwhisper.com" target="_blank">SuperWhisper</a> for AI dictation. Pairing
+                    it with Claude Code unlocks a different workflow:</p>
+
+                <p><strong>dictate feature requests → come back → Claude built it</strong></p>
+
+                <p>This entire post was drafted via dictation as well.</p>
+
+                <p>The magic is <strong>async + voice</strong>. Describe what you want while doing something else.
+                    Claude works while you're away. Review when you're back.</p>
+
+                <p>Maximally efficient use of time.</p>
+
+                <h3>7. The Subscription Economics Actually Make Sense</h3>
+
+                <p><strong>Claude Pro ($20/month):</strong> Light usage. Hit limits quickly if building.<br>
+                    <strong>Claude Max ($100/month):</strong> 5x capacity. I hit limits twice over the weekend (resets
+                    every 5 hours).
+                </p>
+
+                <p><strong>Is $100/month worth it?</strong><br>
+                    Before this weekend: no, I never thought I would pay $100.<br>
+                    After this weekend: <strong>absolutely yes.</strong></p>
+
+                <p>Claude Code feels <strong>purpose-built for shipping</strong>. $100 pays for itself if it results in
+                    even one project you wouldn't have built otherwise.</p>
+
+                <p><strong>Advice:</strong> Start with Pro ($20). Hit limits within a day? Upgrade. You'll know.</p>
+
+                <h3>8. The Skill Gap Is Narrowing, Not Closing</h3>
+
+                <p><strong>What changed:</strong> Non-engineers can now build functional apps with Claude Code. Huge for
+                    PMs, designers, others with ideas but no implementation skills.</p>
+
+                <p><strong>What didn't change:</strong> Building something functional ≠ building something robust,
+                    secure, scalable, maintainable. Those concerns still require engineering judgment.</p>
+
+                <p><strong>The higher-order skills matter more:</strong></p>
+
+                <ul>
+                    <li>Knowing which questions to ask</li>
+                    <li>Understanding system architecture</li>
+                    <li>Recognizing performance bottlenecks</li>
+                    <li>Anticipating failure modes</li>
+                    <li>Making technical trade-off decisions</li>
+                </ul>
+
+                <p>Claude Code is a <strong>force multiplier</strong> for people who have these skills. It's an enabler
+                    for people who don't. Both outcomes are good.</p>
+
+                <h2>Limitations and Trade-offs</h2>
+
+                <p><strong>This only worked because:</strong></p>
+
+                <ol>
+                    <li><strong>Personal projects = low stakes.</strong> No code review means bugs ship. Fine for side
+                        projects. Not fine at work.</li>
+                    <li><strong>I'm the only user.</strong> No need for edge case handling, scale optimization, or
+                        security beyond basics.</li>
+                    <li><strong>These are personal consumption tools, not production apps.</strong> I haven't built
+                        anything production-ready with Claude Code yet. That's the next frontier—understanding how it
+                        works for systems that require high reliability, security, and scale.</li>
+                    <li><strong>The domains were well-trodden.</strong> Claude assembled known patterns (Flask +
+                        Tailwind, Next.js + Vercel, OAuth2 flows), not inventing new algorithms.</li>
+                </ol>
+
+                <p><strong>Would I use this for production code at work?</strong> I'm excited to try Claude Code
+                    internally for prototyping and exploration.</p>
+
+                <p><strong>Is this "real" development work?</strong> I didn't write syntax, but I:</p>
+
+                <ul>
+                    <li>Made technical decisions</li>
+                    <li>Debugged issues</li>
+                    <li>Reviewed generated code</li>
+                    <li>Guided implementation with questions</li>
+                </ul>
+
+                <p>The output is code that works. The process just looks different.</p>
+
+                <h2>What's Next: Future Exploration</h2>
+
+                <p><strong>Things I want to try:</strong></p>
+
+                <ol>
+                    <li><strong>Building a production-ready app with Claude Code</strong>: Understanding how it handles
+                        requirements for reliability, security, scale, monitoring, error handling at production level.
+                    </li>
+                    <li><strong>Learning hidden features</strong>: This weekend was my first real usage. There are
+                        definitely features, workflows, and best practices I haven't discovered yet.</li>
+                    <li><strong>Teaching others</strong>: Now that I've seen what's possible, I want to help teammates
+                        explore what they can build.</li>
+                </ol>
+
+                <h2>Should You Try This?</h2>
+
+                <p>Claude Code is now available internally. I'm a heavy DevMate user (for nearly every diff), and I'm
+                    curious to explore how Claude Code works for different use cases.</p>
+
+                <p><strong>If you've been sitting on side project ideas, the barrier is effectively zero now.</strong>
+                </p>
+
+                <p>The repos are public—check the commits to see the velocity:</p>
+
+                <ul>
+                    <li><strong>YouTube Manager:</strong> <a href="https://github.com/yizhouyu/youtube-manager"
+                            target="_blank">github.com/yizhouyu/youtube-manager</a></li>
+                    <li><strong>Personal Website:</strong> <a href="https://github.com/yizhouyu/yizhouyu.github.io"
+                            target="_blank">github.com/yizhouyu/yizhouyu.github.io</a></li>
+                    <li><strong>Life in Weeks:</strong> <a href="https://github.com/yizhouyu/life-in-weeks-nextjs"
+                            target="_blank">github.com/yizhouyu/life-in-weeks-nextjs</a></li>
+                </ul>
+
+                <p><strong>Start with the $20 Claude Pro plan.</strong> Build something small. See if you hit limits.
+                    Upgrade if needed.</p>
+
+                <p><strong>The bottleneck isn't the tool anymore. It's whether you have something you want to
+                        build.</strong></p>
+
+                <hr>
+
+                <p><strong>P.S.</strong> I haven't tried OpenAI's Codex or Cursor yet, so I can't compare. If anyone has
+                    experience with both, I'd love to hear how they stack up.</p>
+            </div>
+
+            <!-- Footer will be injected here by shared-footer.js -->
+            <div id="blog-post-footer"></div>
+        </article>
+    </div>
+
+    <!-- Shared blog script - handles theme toggle, footer, and all UI elements -->
+    <script src="../../shared-blog.js"></script>
+</body>
+</html>
