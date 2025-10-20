@@ -457,14 +457,38 @@
         renderTags();
 
         // Calculate and display blog statistics
-        function calculateBlogStats() {
+        async function calculateBlogStats() {
             const posts = document.querySelectorAll('.post-card');
             const postCount = posts.length;
 
-            // Calculate total reading time by fetching each post's word count
-            // For now, we'll estimate based on average blog post length
-            const avgReadingTimePerPost = 15; // minutes (rough estimate)
-            const totalReadingTime = postCount * avgReadingTimePerPost;
+            // Calculate total reading time by fetching each post and calculating word count
+            let totalReadingTime = 0;
+
+            for (const post of posts) {
+                const postLink = post.querySelector('.post-card-link');
+                if (postLink) {
+                    const postUrl = postLink.getAttribute('href');
+                    try {
+                        const response = await fetch(postUrl);
+                        const html = await response.text();
+
+                        // Parse HTML to extract post content
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const postContent = doc.querySelector('.post-content');
+
+                        if (postContent) {
+                            const text = postContent.textContent || postContent.innerText;
+                            const wordCount = text.trim().split(/\s+/).length;
+                            const wordsPerMinute = 200;
+                            const minutes = Math.ceil(wordCount / wordsPerMinute);
+                            totalReadingTime += minutes;
+                        }
+                    } catch (error) {
+                        console.log('Could not fetch reading time for post:', postUrl, error);
+                    }
+                }
+            }
 
             // Update the UI
             document.getElementById('postCount').textContent = postCount;
