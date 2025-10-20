@@ -223,6 +223,60 @@ See `blog/goatcounter-setup.md` for detailed setup instructions.
 - View counts provide social proof
 - Stats show blog is active and growing
 
+## Comments and Reactions System
+
+### Overview
+Blog posts include a full-featured comments and reactions system powered by Giscus.
+
+### Giscus Integration
+
+**What is Giscus:**
+- Comments system powered by GitHub Discussions
+- Privacy-friendly: no tracking, no cookies, no ads
+- Free forever
+- Requires GitHub account to comment (reduces spam)
+
+**Repository:**
+- Comments stored in: https://github.com/yizhouyu/blog-comments
+- Uses GitHub Discussions in "Announcements" category
+- Mapped by pathname (each blog post = one discussion)
+
+**Features:**
+- Full Markdown support in comments
+- Emoji reactions: 👍 ❤️ 🎉 🚀 👀 😄
+- Threaded replies
+- Dark/light theme sync (uses `preferred_color_scheme`)
+- Real-time updates
+
+**Implementation:**
+- Location: `blog/shared-blog.js` → `giscusHTML` constant
+- Automatically injected into all blog posts via `#blog-post-footer` container
+- Styling: `blog/shared-styles.css` → `.giscus-comments`
+
+**Configuration:**
+```javascript
+// In shared-blog.js
+data-repo="yizhouyu/blog-comments"
+data-repo-id="R_kgDOQGAZLw"
+data-category="Announcements"
+data-mapping="pathname"
+data-reactions-enabled="1"
+data-theme="preferred_color_scheme"
+```
+
+**How Comments Work:**
+1. Reader clicks "Sign in with GitHub" button
+2. Authorizes Giscus app (one-time)
+3. Leaves comment or reaction
+4. Comment appears in GitHub Discussions
+5. Comment syncs to blog post in real-time
+
+**Moderation:**
+- All comments visible at: https://github.com/yizhouyu/blog-comments/discussions
+- Can edit/delete/lock discussions from GitHub
+- Can enable/disable reactions per discussion
+- GitHub's built-in moderation tools available
+
 ## Potential Future Enhancements
 Consider adding if user requests:
 - Categories/tags filtering (tags already supported, just need filter UI)
@@ -230,7 +284,7 @@ Consider adding if user requests:
 - Table of contents for long posts
 - Code syntax highlighting
 - RSS feed
-- Comments system (via utterances - GitHub-based, privacy-friendly)
+- Comment count badges on blog index
 
 ## Example Publishing Request
 ```

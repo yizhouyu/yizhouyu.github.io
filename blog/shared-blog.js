@@ -27,6 +27,28 @@
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
     };
 
+    // ===== GISCUS COMMENTS HTML =====
+
+    const giscusHTML = `
+        <div class="giscus-comments">
+            <script src="https://giscus.app/client.js"
+                    data-repo="yizhouyu/blog-comments"
+                    data-repo-id="R_kgDOQGAZLw"
+                    data-category="Announcements"
+                    data-category-id="DIC_kwDOQGAZL84Cw3xg"
+                    data-mapping="pathname"
+                    data-strict="0"
+                    data-reactions-enabled="1"
+                    data-emit-metadata="0"
+                    data-input-position="bottom"
+                    data-theme="preferred_color_scheme"
+                    data-lang="en"
+                    crossorigin="anonymous"
+                    async>
+            </script>
+        </div>
+    `;
+
     // ===== FOOTER HTML =====
 
     const footerHTML = `
@@ -152,10 +174,11 @@
     // ===== INITIALIZE WHEN DOM IS READY =====
 
     function init() {
-        // Insert footer
+        // Insert Giscus comments (before footer)
         const footerContainer = document.getElementById('blog-post-footer');
         if (footerContainer) {
-            footerContainer.innerHTML = footerHTML;
+            // Add comments section before footer
+            footerContainer.innerHTML = giscusHTML + footerHTML;
         }
 
         // Insert theme toggle button

@@ -321,9 +321,20 @@ body.dark-mode .theme-toggle {
     transform: scale(1.1);
 }
 
+/* Giscus comments section */
+.giscus-comments {
+    margin-top: 64px;
+    padding-top: 48px;
+    border-top: 1px solid #e5e7eb;
+}
+
+body.dark-mode .giscus-comments {
+    border-top-color: #374151;
+}
+
 /* Post footer */
 .post-footer {
-    margin-top: 64px;
+    margin-top: 48px;
     padding-top: 32px;
     border-top: 1px solid #e5e7eb;
     display: flex;
