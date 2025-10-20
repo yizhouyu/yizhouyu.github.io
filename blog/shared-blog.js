@@ -27,27 +27,35 @@
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
     };
 
-    // ===== GISCUS COMMENTS HTML =====
+    // ===== GISCUS COMMENTS =====
 
-    const giscusHTML = `
-        <div class="giscus-comments">
-            <script src="https://giscus.app/client.js"
-                    data-repo="yizhouyu/blog-comments"
-                    data-repo-id="R_kgDOQGAZLw"
-                    data-category="Announcements"
-                    data-category-id="DIC_kwDOQGAZL84Cw3xg"
-                    data-mapping="pathname"
-                    data-strict="0"
-                    data-reactions-enabled="1"
-                    data-emit-metadata="0"
-                    data-input-position="bottom"
-                    data-theme="preferred_color_scheme"
-                    data-lang="en"
-                    crossorigin="anonymous"
-                    async>
-            </script>
-        </div>
-    `;
+    function loadGiscus() {
+        // Create container div
+        const giscusContainer = document.createElement('div');
+        giscusContainer.className = 'giscus-comments';
+
+        // Create script element
+        const script = document.createElement('script');
+        script.src = 'https://giscus.app/client.js';
+        script.setAttribute('data-repo', 'yizhouyu/blog-comments');
+        script.setAttribute('data-repo-id', 'R_kgDOQGAZLw');
+        script.setAttribute('data-category', 'Announcements');
+        script.setAttribute('data-category-id', 'DIC_kwDOQGAZL84Cw3xg');
+        script.setAttribute('data-mapping', 'pathname');
+        script.setAttribute('data-strict', '0');
+        script.setAttribute('data-reactions-enabled', '1');
+        script.setAttribute('data-emit-metadata', '0');
+        script.setAttribute('data-input-position', 'bottom');
+        script.setAttribute('data-theme', 'preferred_color_scheme');
+        script.setAttribute('data-lang', 'en');
+        script.setAttribute('crossorigin', 'anonymous');
+        script.async = true;
+
+        // Append script to container
+        giscusContainer.appendChild(script);
+
+        return giscusContainer;
+    }
 
     // ===== FOOTER HTML =====
 
@@ -174,11 +182,15 @@
     // ===== INITIALIZE WHEN DOM IS READY =====
 
     function init() {
-        // Insert Giscus comments (before footer)
+        // Insert Giscus comments and footer
         const footerContainer = document.getElementById('blog-post-footer');
         if (footerContainer) {
-            // Add comments section before footer
-            footerContainer.innerHTML = giscusHTML + footerHTML;
+            // Add Giscus comments
+            const giscusWidget = loadGiscus();
+            footerContainer.appendChild(giscusWidget);
+
+            // Add footer HTML
+            footerContainer.insertAdjacentHTML('beforeend', footerHTML);
         }
 
         // Insert theme toggle button
