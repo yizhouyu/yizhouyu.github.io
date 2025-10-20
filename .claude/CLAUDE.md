@@ -26,7 +26,7 @@ This is a static HTML site with no build process. All pages are standalone HTML 
 - Consistent color palette (blue gradient: #3b82f6 to #1e40af)
 - Dark mode toggle (synced via localStorage)
 - Responsive design with mobile breakpoints
-- All pages include Google Analytics (G-T39LJ72QFL) + Cloudflare Analytics
+- All pages include Google Analytics (G-T39LJ72QFL) + Cloudflare Analytics + GoatCounter
 
 ## Development Workflow
 
@@ -338,7 +338,7 @@ When creating new pages or sections, maintain consistency:
 
 ## Analytics Integration
 
-All pages must include these tracking scripts in `<head>`:
+**IMPORTANT:** All pages must include these tracking scripts in `<head>`:
 
 ```html
 <!-- Google tag (gtag.js) -->
@@ -353,4 +353,19 @@ All pages must include these tracking scripts in `<head>`:
 <!-- Cloudflare Web Analytics -->
 <script defer src='https://static.cloudflareinsights.com/beacon.min.js'
         data-cf-beacon='{"token": "8502e35b873b4becad641200564f6c41"}'></script>
+
+<!-- GoatCounter Analytics -->
+<script data-goatcounter="https://yizhouyu.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
 ```
+
+**Why three analytics services:**
+- **Google Analytics**: Comprehensive analytics with detailed insights
+- **Cloudflare Analytics**: Lightweight, privacy-focused, no JavaScript blocking
+- **GoatCounter**: Privacy-friendly, no cookies, public view counter API for displaying page views
+
+**GoatCounter Configuration:**
+- Dashboard: https://yizhouyu.goatcounter.com
+- Setting "Allow adding visitor counts on your website" must be enabled
+- Public counter endpoint: `https://yizhouyu.goatcounter.com/counter/[path].json`
+- Returns: `{"count": "123", "count_unique": "45"}`
