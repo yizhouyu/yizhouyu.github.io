@@ -158,13 +158,24 @@
         const path = window.location.pathname;
 
         // Fetch view count from GoatCounter API
-        fetch(`https://${GOATCOUNTER_CODE}.goatcounter.com/counter${path}.json`)
-            .then(response => response.json())
+        // GoatCounter API format: https://[code].goatcounter.com/api/v0/stats/hits?path=/blog/posts/...
+        fetch(`https://${GOATCOUNTER_CODE}.goatcounter.com/api/v0/stats/hits?path=${encodeURIComponent(path)}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                const count = data.count || 0;
+                // GoatCounter API returns an array of stat objects
+                let count = 0;
+                if (data && data.length > 0 && data[0].stats) {
+                    // Sum up all the counts
+                    count = data[0].stats.reduce((sum, stat) => sum + (stat.count || 0), 0);
+                }
 
                 // Check if view count already exists
-                if (!postMeta.querySelector('.view-count')) {
+                if (!postMeta.querySelector('.view-count') && count > 0) {
                     const viewCountElement = document.createElement('span');
                     viewCountElement.className = 'view-count';
                     viewCountElement.innerHTML = `<span class="footer-separator">·</span>${count.toLocaleString()} views`;
