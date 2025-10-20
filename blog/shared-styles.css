@@ -239,6 +239,37 @@ body.dark-mode .post-content img {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
+/* ===== Tags ===== */
+.post-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 24px;
+    margin-bottom: 0;
+}
+
+.tag {
+    display: inline-block;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.tag:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+body.dark-mode .tag {
+    background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
+}
+
 /* ===== Theme Toggle Button ===== */
 .theme-toggle {
     position: fixed;

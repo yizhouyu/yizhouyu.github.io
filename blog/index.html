@@ -177,10 +177,38 @@
         .post-excerpt {
             color: #4a5568;
             line-height: 1.8;
+            margin-bottom: 12px;
         }
 
         body.dark-mode .post-excerpt {
             color: #cbd5e0;
+        }
+
+        .post-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 12px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            color: white;
+            border-radius: 16px;
+            font-size: 0.8em;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .post-card-link:hover .tag {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+        }
+
+        body.dark-mode .tag {
+            background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
         }
 
         .search-container {
@@ -299,12 +327,12 @@
             <input type="text"
                    class="search-box"
                    id="searchBox"
-                   placeholder="Search posts by title..."
+                   placeholder="Search posts by title or tags..."
                    autocomplete="off">
         </div>
 
         <div class="posts-list" id="postsList">
-            <article class="post-card">
+            <article class="post-card" data-tags="Vibe Coding,AI">
                 <a href="posts/vibe-coding-with-claude-code/" class="post-card-link">
                     <img src="posts/vibe-coding-with-claude-code/images/cover.png" alt="Vibe Coding with Claude Code" class="post-cover">
                     <div class="post-card-content">
@@ -313,6 +341,7 @@
                         <div class="post-excerpt">
                             How I built a YouTube Manager, personal website, and Life in Weeks visualization in one weekend using Claude Code - 137 commits, zero lines of code written by hand.
                         </div>
+                        <div class="post-tags"></div>
                     </div>
                 </a>
             </article>
@@ -346,6 +375,26 @@
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
         }
 
+        // Render tags from data-tags attribute
+        function renderTags() {
+            const posts = document.querySelectorAll('.post-card');
+            posts.forEach(post => {
+                const tagsAttr = post.getAttribute('data-tags');
+                if (tagsAttr) {
+                    const tagsContainer = post.querySelector('.post-tags');
+                    if (tagsContainer) {
+                        const tags = tagsAttr.split(',').map(tag => tag.trim());
+                        tagsContainer.innerHTML = tags.map(tag =>
+                            `<span class="tag">${tag}</span>`
+                        ).join('');
+                    }
+                }
+            });
+        }
+
+        // Render tags on page load
+        renderTags();
+
         // Search functionality
         const searchBox = document.getElementById('searchBox');
         const postsList = document.getElementById('postsList');
@@ -358,8 +407,9 @@
 
             posts.forEach(post => {
                 const title = post.querySelector('.post-title').textContent.toLowerCase();
+                const tags = post.getAttribute('data-tags') ? post.getAttribute('data-tags').toLowerCase() : '';
 
-                if (title.includes(searchTerm)) {
+                if (title.includes(searchTerm) || tags.includes(searchTerm)) {
                     post.style.display = 'block';
                     visibleCount++;
                 } else {

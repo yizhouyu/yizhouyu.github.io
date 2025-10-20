@@ -59,6 +59,24 @@
         </button>
     `;
 
+    // ===== TAG RENDERING =====
+
+    function renderTags() {
+        const articles = document.querySelectorAll('article[data-tags]');
+        articles.forEach(article => {
+            const tagsAttr = article.getAttribute('data-tags');
+            if (tagsAttr) {
+                const tagsContainer = article.querySelector('.post-tags');
+                if (tagsContainer) {
+                    const tags = tagsAttr.split(',').map(tag => tag.trim());
+                    tagsContainer.innerHTML = tags.map(tag =>
+                        `<span class="tag">${tag}</span>`
+                    ).join('');
+                }
+            }
+        });
+    }
+
     // ===== INITIALIZE WHEN DOM IS READY =====
 
     function init() {
@@ -73,6 +91,9 @@
         if (body && !document.getElementById('themeToggle')) {
             body.insertAdjacentHTML('beforeend', themeButtonHTML);
         }
+
+        // Render tags
+        renderTags();
     }
 
     // Run initialization
