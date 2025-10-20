@@ -61,12 +61,15 @@ git push                      # Deploy to GitHub Pages
 ## Directory Structure
 ```
 blog/
-├── index.html              # Blog listing page with search
+├── index.html              # Blog listing page with search and statistics
+├── shared-styles.css       # Shared CSS for all blog posts
+├── shared-blog.js          # Shared JavaScript (theme, footer, stats, view counts)
+├── goatcounter-setup.md    # Instructions for setting up GoatCounter
 ├── posts/                  # Individual blog posts
-│   ├── test.html
-│   └── [future-posts].html
-└── images/                 # Post images (create as needed)
-    └── [post-images].jpg
+│   ├── [post-slug]/
+│   │   ├── index.html
+│   │   └── images/        # Post-specific images
+└── images/                 # Shared blog images (if needed)
 ```
 
 ## Publishing Workflow
@@ -100,23 +103,134 @@ blog/
 ## Current Features
 - ✅ Blog index page with post listing
 - ✅ Individual post pages
-- ✅ Real-time search by title
-- ✅ Dark mode support
+- ✅ Real-time search by title and tags
+- ✅ Dark mode support (synced with main site)
 - ✅ Responsive design
 - ✅ Timestamps on all posts
 - ✅ Clean design matching main site
 - ✅ Google Analytics + Cloudflare tracking
+- ✅ **Blog statistics system:**
+  - Reading time calculation (auto-calculated per post)
+  - Total posts count on blog index
+  - Total reading time across all posts
+  - View count tracking (via GoatCounter - needs setup)
+- ✅ **Shared components:**
+  - `shared-styles.css` - Consistent styling across all blog posts
+  - `shared-blog.js` - Theme toggle, footer, tags, reading time, view counts
+
+## Blog Statistics System
+
+### Overview
+The blog includes a comprehensive statistics system that displays useful metrics to readers while remaining privacy-conscious.
+
+### Statistics Displayed
+
+**On Individual Posts:**
+1. **Published Date** - e.g., "October 19, 2025"
+2. **Reading Time** - Auto-calculated from word count (200 words/min average)
+3. **View Count** - Fetched from GoatCounter API (when configured)
+
+**On Blog Index:**
+1. **Total Posts** - Count of all published posts
+2. **Total Reading Time** - Sum of all post reading times
+3. **Total Views** - Aggregate views across all posts (when GoatCounter is configured)
+
+### Implementation Details
+
+**Reading Time Calculation:**
+- Location: `blog/shared-blog.js` → `calculateReadingTime()`
+- Method: Counts words in `.post-content`, divides by 200 words/min
+- Display: Automatically appended to `.post-meta` on post pages
+- Format: "X min read"
+
+**View Count Tracking:**
+- Service: GoatCounter (https://goatcounter.com)
+- Privacy-friendly, no cookies, GDPR compliant
+- Free for personal use
+- Public API for fetching counts
+
+### GoatCounter Setup Instructions
+
+**Status:** Ready to activate (tracking code placeholder in place)
+
+**Setup Steps:**
+1. Create account at https://goatcounter.com/signup
+2. Choose site code (e.g., "yizhouyu")
+3. Get tracking script from dashboard
+4. Update two locations:
+   - `blog/shared-blog.js` → Replace `GOATCOUNTER_CODE = 'YOUR-CODE'`
+   - Add tracking script to `<head>` tags in:
+     - `blog/index.html`
+     - All blog post HTML files (look for comment: "GoatCounter Analytics - ADD YOUR TRACKING CODE HERE")
+
+**Files to Update:**
+```javascript
+// In blog/shared-blog.js
+const GOATCOUNTER_CODE = 'yizhouyu'; // Replace 'YOUR-CODE' with actual code
+```
+
+```html
+<!-- In blog/index.html and blog/posts/*/index.html -->
+<script data-goatcounter="https://yizhouyu.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+```
+
+**Features Once Activated:**
+- Real-time view counting
+- View counts display on individual posts
+- Total views on blog index
+- Public dashboard at https://[your-code].goatcounter.com
+- No backend needed - pure client-side integration
+
+**Reference Documentation:**
+See `blog/goatcounter-setup.md` for detailed setup instructions.
+
+### Code Architecture
+
+**Shared Components:**
+- `blog/shared-styles.css` - All blog styling (posts, index, dark mode)
+- `blog/shared-blog.js` - All JavaScript functionality:
+  - Theme toggle (synced via localStorage)
+  - Footer rendering
+  - Tag rendering
+  - Reading time calculation
+  - View count fetching
+  - Automatic initialization
+
+**Usage in Blog Posts:**
+```html
+<!-- In <head> -->
+<link rel="stylesheet" href="../../shared-styles.css">
+
+<!-- Before </body> -->
+<script src="../../shared-blog.js"></script>
+```
+
+### Why This Approach?
+
+**Client-Side Only:**
+- No backend required (works with GitHub Pages)
+- No build process needed
+- Instant updates on file change
+
+**Privacy-Conscious:**
+- GoatCounter: no cookies, no personal data tracking
+- Google Analytics: kept for detailed analytics (private use)
+- Cloudflare Analytics: lightweight, privacy-focused
+
+**Reader Value:**
+- Reading time helps readers decide if they have time to read
+- View counts provide social proof
+- Stats show blog is active and growing
 
 ## Potential Future Enhancements
 Consider adding if user requests:
-- Cover images for posts (displayed in blog listing)
-- Categories/tags system
-- Reading time estimate
+- Categories/tags filtering (tags already supported, just need filter UI)
 - Social share buttons
 - Table of contents for long posts
 - Code syntax highlighting
 - RSS feed
-- Comments system (via third-party like Disqus or utterances)
+- Comments system (via utterances - GitHub-based, privacy-friendly)
 
 ## Example Publishing Request
 ```

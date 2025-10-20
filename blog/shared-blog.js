@@ -77,6 +77,78 @@
         });
     }
 
+    // ===== READING TIME CALCULATION =====
+
+    function calculateReadingTime() {
+        const article = document.querySelector('article .post-content');
+        if (!article) return 0;
+
+        const text = article.textContent || article.innerText;
+        const wordCount = text.trim().split(/\s+/).length;
+        const wordsPerMinute = 200; // Average reading speed
+        const minutes = Math.ceil(wordCount / wordsPerMinute);
+
+        return minutes;
+    }
+
+    function displayReadingTime() {
+        const postMeta = document.querySelector('.post-meta');
+        if (!postMeta) return;
+
+        const readingTime = calculateReadingTime();
+        if (readingTime > 0) {
+            // Check if reading time already exists
+            if (!postMeta.querySelector('.reading-time')) {
+                const readingTimeElement = document.createElement('span');
+                readingTimeElement.className = 'reading-time';
+                readingTimeElement.innerHTML = `<span class="footer-separator">·</span>${readingTime} min read`;
+                postMeta.appendChild(readingTimeElement);
+            }
+        }
+    }
+
+    // Make calculateReadingTime available globally for blog index
+    window.calculateReadingTime = calculateReadingTime;
+
+    // ===== GOATCOUNTER VIEW COUNT =====
+
+    // GoatCounter site code - dashboard at https://yizhouyu.goatcounter.com
+    const GOATCOUNTER_CODE = 'yizhouyu';
+
+    function displayViewCount() {
+        // Skip if GoatCounter is not configured
+        if (GOATCOUNTER_CODE === 'YOUR-CODE') {
+            return;
+        }
+
+        const postMeta = document.querySelector('.post-meta');
+        if (!postMeta) return;
+
+        // Get current page path
+        const path = window.location.pathname;
+
+        // Fetch view count from GoatCounter API
+        fetch(`https://${GOATCOUNTER_CODE}.goatcounter.com/counter${path}.json`)
+            .then(response => response.json())
+            .then(data => {
+                const count = data.count || 0;
+
+                // Check if view count already exists
+                if (!postMeta.querySelector('.view-count')) {
+                    const viewCountElement = document.createElement('span');
+                    viewCountElement.className = 'view-count';
+                    viewCountElement.innerHTML = `<span class="footer-separator">·</span>${count.toLocaleString()} views`;
+                    postMeta.appendChild(viewCountElement);
+                }
+            })
+            .catch(error => {
+                console.log('Could not fetch view count:', error);
+            });
+    }
+
+    // Make displayViewCount available globally
+    window.displayViewCount = displayViewCount;
+
     // ===== INITIALIZE WHEN DOM IS READY =====
 
     function init() {
@@ -94,6 +166,12 @@
 
         // Render tags
         renderTags();
+
+        // Display reading time
+        displayReadingTime();
+
+        // Display view count (if GoatCounter is configured)
+        displayViewCount();
     }
 
     // Run initialization

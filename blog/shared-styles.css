@@ -122,10 +122,32 @@ body.dark-mode h3 {
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
+    flex-wrap: wrap;
 }
 
 body.dark-mode .post-meta {
     color: #9ca3af;
+}
+
+.post-meta .footer-separator {
+    color: #d1d5db;
+    margin: 0 4px;
+}
+
+body.dark-mode .post-meta .footer-separator {
+    color: #4b5563;
+}
+
+.post-meta .reading-time {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.post-meta .view-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* ===== Post Content ===== */
