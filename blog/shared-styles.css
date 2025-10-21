@@ -321,20 +321,15 @@ body.dark-mode .theme-toggle {
     transform: scale(1.1);
 }
 
-/* Cusdis comments section */
-.cusdis-comments {
+/* Giscus comments section */
+.giscus-comments {
     margin-top: 64px;
     padding-top: 48px;
     border-top: 1px solid #e5e7eb;
 }
 
-body.dark-mode .cusdis-comments {
+body.dark-mode .giscus-comments {
     border-top-color: #374151;
-}
-
-/* Cusdis dark mode styling */
-body.dark-mode #cusdis_thread {
-    color-scheme: dark;
 }
 
 /* Post footer */
