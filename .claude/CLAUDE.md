@@ -223,59 +223,59 @@ See `blog/goatcounter-setup.md` for detailed setup instructions.
 - View counts provide social proof
 - Stats show blog is active and growing
 
-## Comments and Reactions System
+## Comments System
 
 ### Overview
-Blog posts include a full-featured comments and reactions system powered by Giscus.
+Blog posts include a lightweight, privacy-friendly commenting system powered by Cusdis.
 
-### Giscus Integration
+### Cusdis Integration
 
-**What is Giscus:**
-- Comments system powered by GitHub Discussions
-- Privacy-friendly: no tracking, no cookies, no ads
-- Free forever
-- Requires GitHub account to comment (reduces spam)
+**What is Cusdis:**
+- Lightweight comment system (~5kb gzipped)
+- Privacy-friendly: no tracking, no cookies
+- Free cloud service
+- No login required - just name and email
+- Open source alternative to Disqus
 
-**Repository:**
-- Comments stored in: https://github.com/yizhouyu/blog-comments
-- Uses GitHub Discussions in "Announcements" category
-- Mapped by pathname (each blog post = one discussion)
+**Service:**
+- Cusdis Cloud: https://cusdis.com
+- App ID: `f7415d31-27e0-4bf1-bdaf-334f24a9faf4`
+- Auto-approve enabled (comments appear immediately)
 
 **Features:**
-- Full Markdown support in comments
-- Emoji reactions: 👍 ❤️ 🎉 🚀 👀 😄
-- Threaded replies
-- Dark/light theme sync (uses `preferred_color_scheme`)
-- Real-time updates
+- Anonymous commenting (name + email only)
+- Email notifications for new comments
+- Dark/light theme support
+- Simple, clean UI
+- Moderate from email or dashboard
 
 **Implementation:**
-- Location: `blog/shared-blog.js` → `giscusHTML` constant
+- Location: `blog/shared-blog.js` → `loadCusdis()` function
 - Automatically injected into all blog posts via `#blog-post-footer` container
-- Styling: `blog/shared-styles.css` → `.giscus-comments`
+- Styling: `blog/shared-styles.css` → `.cusdis-comments`
 
 **Configuration:**
 ```javascript
 // In shared-blog.js
-data-repo="yizhouyu/blog-comments"
-data-repo-id="R_kgDOQGAZLw"
-data-category="Announcements"
-data-mapping="pathname"
-data-reactions-enabled="1"
-data-theme="preferred_color_scheme"
+data-host="https://cusdis.com"
+data-app-id="f7415d31-27e0-4bf1-bdaf-334f24a9faf4"
+data-page-id=window.location.pathname
+data-page-url=window.location.href
+data-page-title=document.title
 ```
 
 **How Comments Work:**
-1. Reader clicks "Sign in with GitHub" button
-2. Authorizes Giscus app (one-time)
-3. Leaves comment or reaction
-4. Comment appears in GitHub Discussions
-5. Comment syncs to blog post in real-time
+1. Reader enters name, email, and comment
+2. Comment appears immediately (auto-approve enabled)
+3. You receive email notification
+4. Can moderate from email or Cusdis dashboard
 
 **Moderation:**
-- All comments visible at: https://github.com/yizhouyu/blog-comments/discussions
-- Can edit/delete/lock discussions from GitHub
-- Can enable/disable reactions per discussion
-- GitHub's built-in moderation tools available
+- Dashboard: https://cusdis.com/dashboard
+- Email notifications for all new comments
+- Can approve/reject/delete from email
+- Can reply to comments from dashboard
+- Spam protection via email verification
 
 ## Potential Future Enhancements
 Consider adding if user requests:
