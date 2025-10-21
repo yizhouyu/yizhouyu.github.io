@@ -38,9 +38,9 @@
         const script = document.createElement('script');
         script.src = 'https://giscus.app/client.js';
         script.setAttribute('data-repo', 'yizhouyu/blog-comments');
-        script.setAttribute('data-repo-id', 'R_kgDOQGAZLw');
+        script.setAttribute('data-repo-id', 'R_kgDOQGKylA');
         script.setAttribute('data-category', 'Announcements');
-        script.setAttribute('data-category-id', 'DIC_kwDOQGAZL84Cw3xg');
+        script.setAttribute('data-category-id', 'DIC_kwDOQGKylM4Cw4bj');
         script.setAttribute('data-mapping', 'pathname');
         script.setAttribute('data-strict', '0');
         script.setAttribute('data-reactions-enabled', '1');
