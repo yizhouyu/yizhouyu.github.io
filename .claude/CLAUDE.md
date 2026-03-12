@@ -92,7 +92,7 @@ npx @googleworkspace/cli docs documents get --params '{"documentId": "DOC_ID"}' 
 
 ### Claude's Publishing Process
 1. Fetch content from Google Docs via `gws` CLI (preferred) or receive pasted content
-2. Use a script to parse the gws JSON and generate HTML — do NOT manually re-type content
+2. Use a script to parse the gws JSON and generate HTML — do NOT manually re-type content. The script MUST extract hyperlinks from the doc JSON (textStyle.link.url) and preserve them as `<a>` tags in the HTML
 3. Save images to `/blog/images/` with descriptive names
 4. Create post HTML at `/blog/posts/[slug]/index.html`
 5. Update `/blog/index.html` with new post card (newest first)
