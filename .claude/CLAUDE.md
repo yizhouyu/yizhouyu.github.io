@@ -76,17 +76,28 @@ blog/
 
 ### User's Content Creation Process
 1. Write post in Google Docs (any formatting)
-2. Copy content to Claude Code chat
+2. Share Google Doc link with Claude Code, OR copy content to chat
 3. Attach any images directly in chat
 4. Provide title and date (if not today)
 
+### Fetching Google Docs via CLI
+Google Workspace CLI (`gws`) is set up and authenticated. To fetch a doc:
+```bash
+npx @googleworkspace/cli docs documents get --params '{"documentId": "DOC_ID"}' --format json
+```
+- Extract the document ID from the Google Docs URL (between `/d/` and `/edit`)
+- OAuth credentials stored at `~/.config/gws/client_secret.json`
+- GCP project: `intricate-idiom-474923-m6`
+- If auth expires, re-run: `npx @googleworkspace/cli auth login --scopes "https://www.googleapis.com/auth/documents,openid,https://www.googleapis.com/auth/userinfo.email"` and open the printed URL with `open`
+
 ### Claude's Publishing Process
-1. Convert content to HTML matching site style
-2. Save images to `/blog/images/` with descriptive names
-3. Create post HTML at `/blog/posts/[slug].html`
-4. Update `/blog/index.html` with new post card
-5. Commit and push to GitHub
-6. Live in ~2 minutes after GitHub Pages rebuild
+1. Fetch content from Google Docs via `gws` CLI (preferred) or receive pasted content
+2. Use a script to parse the gws JSON and generate HTML — do NOT manually re-type content
+3. Save images to `/blog/images/` with descriptive names
+4. Create post HTML at `/blog/posts/[slug]/index.html`
+5. Update `/blog/index.html` with new post card (newest first)
+6. Commit and push to GitHub
+7. Live in ~2 minutes after GitHub Pages rebuild
 
 ### Post Metadata
 - **Title**: User-provided
