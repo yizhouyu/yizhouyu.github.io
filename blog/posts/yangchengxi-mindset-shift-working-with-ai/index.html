@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T39LJ72QFL"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-T39LJ72QFL');
+    </script>
+
+    <!-- Cloudflare Web Analytics -->
+    <script defer src='https://static.cloudflareinsights.com/beacon.min.js'
+        data-cf-beacon='{"token": "8502e35b873b4becad641200564f6c41"}'></script><!-- End Cloudflare Web Analytics -->
+
+    <!-- GoatCounter Analytics -->
+    <script data-goatcounter="https://yizhouyu.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
+    <!-- End GoatCounter Analytics -->
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>养成系 — The Mindset Shift To Make When Working With AI - Yizhou Yu</title>
+    <meta name="description"
+        content="Your AI agent isn't a product that works out of the box — it's a partner that compounds with every interaction.">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%233b82f6'/><stop offset='100%25' style='stop-color:%231e40af'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23grad)'/><text x='50' y='70' font-family='system-ui,sans-serif' font-size='55' font-weight='bold' fill='white' text-anchor='middle'>YY</text></svg>">
+    <link rel="stylesheet" href="../../shared-styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <a href="../../" class="back-link">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+            </svg>
+            Back to Blog
+        </a>
+
+        <article data-tags="AI,Productivity,Claude Code,Agents">
+            <header class="post-header">
+                <h1>养成系 — The Mindset Shift To Make When Working With AI</h1>
+                <div class="post-meta">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"
+                        xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z" />
+                    </svg>
+                    March 7, 2026
+                </div>
+                <div class="post-tags"></div>
+            </header>
+
+            <div class="post-content">
+                <h2>TLDR</h2>
+
+                <p>In Chinese, <strong>养成系</strong> (yǎng chéng xì, roughly "cultivation") means "something you raise and grow together." Your AI agent isn't a product that works out of the box — it's a partner that compounds with every interaction.</p>
+
+                <p>Every correction is compound interest. The first session will be rough. By the fifth, you'll notice.</p>
+
+                <p><strong>The AI you're working with today is the worst version of it you'll ever use. Start investing now.</strong></p>
+
+                <h2>What is 养成系?</h2>
+
+                <p>养成系 means "raising/nurturing system." In gaming, it describes characters that start weak but grow powerful through investment. Think Pokémon, Tamagotchi, or any RPG where the joy is in the growth curve, not the starting stats.</p>
+
+                <p>The first time someone uses an AI agent for real work, it's usually a bad experience. And that's normal. Every AI agent is 养成系 if you let it be.</p>
+
+                <h2>What This Looks Like in Practice</h2>
+
+                <p>This weekend I trained my cloud-hosted AI assistant to spawn a Claude Code agent team to build a CLI command.</p>
+
+                <p><strong>Run 1:</strong> It forgot a key requirement. I corrected it. 10 seconds.</p>
+
+                <p><strong>Run 2:</strong> The agent team went dark — no status updates for 10 minutes. I said: "all agents need to write status updates, not just the team lead." One sentence.</p>
+
+                <p><strong>Run 3:</strong> Status updates worked, but they wrote to /tmp — gone when the machine shuts down. I said: "write to a persistent drive so history survives." Another sentence.</p>
+
+                <p><strong>Run 4:</strong> It read previous runs' error history before starting, avoided all old mistakes, and every agent reported progress to a shared file.</p>
+
+                <p>Four corrections. Each took 10 seconds. Each made every future run permanently better. By the end of the session, my AI remembered my preferences for agent team composition, status reporting, and code submission — without me having to repeat any of it.</p>
+
+                <h2>Corrections Are the Product</h2>
+
+                <p>Most people treat AI mistakes as friction. 养成系 reframes them as <strong>compound interest</strong>.</p>
+
+                <p>When you correct your agent's memory — CLAUDE.md, a skill file, a shared knowledge base — you're not fixing a bug. You're teaching. And that teaching persists forever.</p>
+
+                <p>The key insight is: <strong>keep the wrong stuff in.</strong> When your agent's memory includes what went wrong, it learns to self-correct. Mistakes in the history aren't noise — they're training data.</p>
+
+                <p>CLI tools approach 养成系 from a different angle. Sometimes an agent fails not because it's wrong, but because it lacks the "hands" to interact with an internal system. In the 养成系 mindset, we don't blame the agent — we give it the hands by adding a new CLI command or tool. Giving your AI agent a way to verify its own work is often the highest-leverage investment you can make.</p>
+
+                <h2>Two Takeaways</h2>
+
+                <p><strong>1. Let your AI remember its own mistakes.</strong> Tell your agent to update its own memory when something goes wrong. A well-configured agent turns each mistake into a permanent lesson. Claude Code's CLAUDE.md and the growing ecosystem of always-on AI assistants all support this — they have memory systems built in and really do take the feedback. The setup that works is the one you've grown with, not the one you downloaded.</p>
+
+                <p><strong>2. Start now, expect rough, grow together.</strong> The earlier you start, the sooner compounding kicks in. I've been investing in training my AI assistant — feeding it everything I read, every group I follow, every preference I have. I even set up a scheduled job to let it read what my colleagues are posting while I sleep, so it knows what's happening without me telling it. It's becoming my digital twin, not because it started as one, but because I'm growing it into one. The AI you're working with today is the worst version of it you'll ever use. That's 养成系.</p>
+
+                <p>I find myself talking more to my AI orchestrator than to coding agents directly — delegating tasks, reviewing drafts, monitoring updates. I'm treating it as my 养成系 twin, and I want it to succeed. Every hour I invest in teaching it makes the next hour more valuable.</p>
+
+                <hr>
+
+                <p><em>P.S. — After writing the first version of this, I came across an article on WeChat (in Chinese) that resonated deeply. It drew the distinction between <strong>用</strong> (use) and <strong>养</strong> (grow):</em></p>
+
+                <p><em>With traditional AI tools, we 用 (use) them — use ChatGPT, use Midjourney, use Cursor. But with always-on AI agents, we 养 (grow) them.</em></p>
+
+                <p><em>Exactly the point. The shift from using to cultivating is what makes this era different.</em></p>
+            </div>
+        </article>
+
+        <div id="blog-post-footer"></div>
+    </div>
+
+    <script src="../../shared-blog.js"></script>
+</body>
+
+</html>
