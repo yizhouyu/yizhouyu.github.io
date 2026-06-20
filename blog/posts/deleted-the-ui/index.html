@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T39LJ72QFL"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-T39LJ72QFL');
+    </script>
+
+    <!-- Cloudflare Web Analytics -->
+    <script defer src='https://static.cloudflareinsights.com/beacon.min.js'
+        data-cf-beacon='{"token": "8502e35b873b4becad641200564f6c41"}'></script><!-- End Cloudflare Web Analytics -->
+
+    <!-- GoatCounter Analytics -->
+    <script data-goatcounter="https://yizhouyu.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
+    <!-- End GoatCounter Analytics -->
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>I Deleted the UI and Just Talked to the Agent - Yizhou Yu</title>
+    <meta name="description" content="I rebuilt my YouTube publishing tool from a Flask web app into a conversation with an agent in the terminal. The interface between a human and an AI doesn't have to be a UI.">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%233b82f6'/><stop offset='100%25' style='stop-color:%231e40af'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23grad)'/><text x='50' y='70' font-family='system-ui,sans-serif' font-size='55' font-weight='bold' fill='white' text-anchor='middle'>YY</text></svg>">
+    <link rel="stylesheet" href="../../shared-styles.css">
+
+    <style>
+        .post-subtitle { font-style: italic; color: #6b7280; margin-top: -8px; }
+        body.dark-mode .post-subtitle { color: #9aa0aa; }
+        .post-content img.diagram { background: #fbfbfd; }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="../../" class="back-link">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+            </svg>
+            Back to Blog
+        </a>
+
+        <article data-tags="AI,Agents,Claude Code,Automation">
+            <header class="post-header">
+                <h1>I Deleted the UI and Just Talked to the Agent</h1>
+                <div class="post-meta">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z" />
+                    </svg>
+                    June 20, 2026
+                </div>
+                <div class="post-tags"></div>
+            </header>
+
+            <img src="./images/cover.svg" alt="I Deleted the UI and Just Talked to the Agent - cover"
+                style="width: 100%; border-radius: 8px; margin-bottom: 40px;">
+
+            <div class="post-content">
+<p class="post-subtitle"><em>Reworking my YouTube tool from a web app into a conversation.</em></p>
+<h2>TLDR</h2>
+<ul>
+<li>A while back I <a href="https://yizhouyu.dev/blog/posts/vibe-coding-with-claude-code/" target="_blank">vibe-coded</a> a Flask web app to automate my YouTube publishing - a three-step wizard: pick files, choose AI-drafted metadata, review, upload. The one AI call that drafted titles and descriptions was the smartest thing in the app, and the part I'd penned in tightest.</li>
+<li>Pulling the UI out altogether improved the whole workflow: the same model is no longer capped at the single question I'd wired it to answer.</li>
+<li>The interface between a human and an AI doesn't have to be a UI. I rebuilt the whole thing as a conversation in the terminal - and once it wasn't boxed into my screens, it started doing things no screen of mine could.</li>
+<li>For instance, it caught that I'd dropped the wrong export into a project folder - the footage didn't match the folder's theme, so publishing it would have shipped an entirely different video - and refused to proceed until I confirmed. I never built a check for that. I didn't have to.</li>
+<li>The takeaway: <strong>don't box the agent in.</strong> Tell it what you want, hand it good reusable skills, and let it work out how.</li>
+</ul>
+<h2>From a UI to a conversation</h2>
+<p>Last time, I spent a weekend building a proper tool for this - a Flask web app with a three-step upload wizard. What I needed was simple: take a finished video, write a good bilingual title and description, make a thumbnail, upload. I wired in one Claude API call to draft the metadata; everything else was buttons and screens.</p>
+<img src="./images/old-ui-wizard.png" alt="The old tool was a three-step web wizard: pick the files, choose from AI-drafted metadata, review and upload. Each screen could do only what I'd built into it.">
+<p>But every screen was a box. The wizard could pick from <em>these</em> files, offer <em>these</em> AI-drafted titles, review <em>these</em> fields, upload - nothing past that. The Claude call lived inside one step, and the screen around it could only ever ask the single question I'd built in: <em>give me some title and description options.</em> The model sitting right there could have watched the footage, caught my mistakes, designed the thumbnail by eye - but the app could only do what I'd built a screen for. <strong>I had capped it at exactly what I'd thought to let it do.</strong></p>
+<p>So I didn't set out to delete the UI. I just started rewriting, talking to the agent instead of clicking through the app, and the interface quietly fell away. I told it what I wanted, not how. When I asked whether it could read the audio so it actually knew what the video was about, it worked the method out itself - reached for <code>ffmpeg</code>, the standard command-line tool for audio and video (which it had installed earlier, unprompted, when it noticed the machine couldn't extract frames), pulled out the audio track, and ran a local transcription. When I asked how it would even get a thumbnail image, it pulled frames straight from the video; its first sweep grabbed one every couple of minutes, I said that was too sparse, and it came back with a dense contact sheet and zoomed into the promising moments. Captions were never in my plan; only once the transcript was sitting there did I realize it could clean them up and upload them as subtitles, so I asked, and it did. The skill I ended up with is just the residue of that back-and-forth - me saying what I wanted, the agent working out how, me nudging, it adjusting.</p>
+<p>And the openness kept paying off in ways a fixed workflow couldn't. Working through a backlog, it stopped on one: the duration didn't match its folder, and the frames showed a clip from a completely different trip than the folder was labeled for. Its note, in effect - <em>you exported the wrong timeline into this folder; I'm not touching it until you confirm.</em> It was right; I'd dropped the wrong export in, and the old wizard would have cheerfully published it under the wrong title. It caught the mistake because it looked at the frames, not the folder name - a check I never built, and never needed to.</p>
+<h2>Letting it exert agency</h2>
+<p>That's the pattern the rest of the project is made of: get out of the agent's way, <strong>and it reaches for things a UI never could.</strong></p>
+<p>The clearest case is the thumbnail. It <strong>designs by looking at the image</strong> - it reads the actual frame and keeps the title text off our faces (mine and my wife's), because I told it once that letting words cover a face kills the shot. The old tool had me drag text around with a slider by hand; that slider is gone, because the thing placing the text is the thing that can see the face.</p>
+<p>The <em>look</em> took iterating, too. My first cut was just flat text dropped onto a raw, ungraded frame:</p>
+<img src="./images/thumb-before.jpg" alt="Before: my first thumbnail - plain yellow text dropped straight onto a flat, ungraded frame.">
+<p>So I found a post on making strong covers, had the agent study it, and rebuild the renderer into a proper graded poster - color grade, a heavy poster typeface, a corner tag, a one-line promise strip:</p>
+<img src="./images/thumb-after.jpg" alt="After: the same shot, color-graded, with a heavy poster typeface, a corner tag, and a one-line promise strip.">
+<p>Even then it got it wrong on the first try - on another video it printed the title straight across the face of a famous statue, Michelangelo's <em>David</em>. I only caught it because I'd wired a sub-agent to inspect every thumbnail and fail it if the text covers the subject. <em>Make the image, then have something look at it before a human does.</em></p>
+<blockquote><p>Another instance of it checking its own work before I saw it: it quietly spun up critic sub-agents to pick apart its own draft metadata. One came back unconvinced by the title - it led with "Tampa," but the real draw of that video was Sarasota, where both the landmark and the search traffic were. It rewrote the title to lead with Sarasota before the draft ever reached me - the agent overruling its own first instinct, with no prompt from me.</p></blockquote>
+<p>The same hands-off pattern ran all the way through the upload itself. The entire conversation with YouTube's API - the resumable upload, the scheduled publish time, the caption track, the playlist - the agent handled. I'd just say things in plain language: <em>put this in my travel playlist.</em> I never gave it the playlist's exact name or its ID; it looked at my channel, matched my loose description to the right collection, and added the video to it. The old wizard had a dropdown for that; here there was nothing to click - I described what I wanted, and it resolved the specifics.</p>
+<p>None of this lived in a settings panel. It couldn't have - a UI can only ever hold the choices you anticipated.</p>
+<h2>Where the AI sits, and where I still do</h2>
+<p>Here's the whole pipeline. By the time it reaches me even the cover is already the agent's pick, so my one remaining job is to glance and nod:</p>
+<img src="./images/workflow-diagram.svg" alt="End-to-end pipeline: I hand the agent a finished cut; it watches and transcribes the video, designs and picks the poster cover, writes the title and description, and adds chapters and captions, with sub-agents critiquing the cover and metadata; I just glance and approve on a single page - the cover is already chosen - and the agent uploads, schedules, and files everything." class="diagram">
+<h2>Corrections are the product</h2>
+<p>Here's the loop that makes this more than a one-off script. Every time I corrected the agent, the correction didn't just fix that one video - it became a <strong>durable rule in memory.</strong> Over a single session the pile grew:</p>
+<ul>
+<li>Don't put our names in the description.</li>
+<li>Publish in numbered order, every two days.</li>
+<li>Match the day-count in the title to the actual video. (It had put <em>"complete 3-day guide"</em> in the title of a one-day video.)</li>
+<li>Don't claim we saw something we didn't. On one hike it wrote that we <em>saw a marmot</em> - but we never did; the trail just passes a spot called "Marmot Meadows." It cut the sighting, kept the place name.</li>
+</ul>
+<p>None of these came from a settings panel. I said each once, in passing - <em>"add this to your skill so you won't forget"</em> - and the next video already knew.</p>
+<p>The captions were the sharpest version of this. I told it the first-pass subtitles were full of errors, and it didn't just patch lines by hand: it judged that its speech model was too weak, downloaded a much larger one itself, and re-ran the transcription. But a better model alone wasn't enough. The agent can't actually <em>hear</em> the audio - it only reads a transcript some other model produced - so it can't prompt its way to an accurate one; it needs tooling that's <strong>deterministic</strong> (same audio in, same transcript out): the fixed pipeline below. That's the honest caveat to <em>don't box the agent in</em> - autonomy still needs engineering, and some of the scaffolding has to be rigid and repeatable, not creative.</p>
+<img src="./images/captions-pipeline.svg" alt="The deterministic captions pipeline: raw audio runs through a stronger speech model primed with a per-video glossary, voice-activity detection, and pinned decoding settings, then a grounded cleanup pass, producing accurate captions - the same audio always yields the same transcript." class="diagram">
+<p>The upload works the same way. The agent supplies the judgment - which playlist, what publish time, whether the cover is legible - but the actual YouTube API calls live in small deterministic scripts it invokes, identical every run. Judgment from the model; the repeatable machinery from code. "Give the agent room" never meant "make it improvise the plumbing."</p>
+<h2>A recipe you can run</h2>
+<p>The <a href="https://github.com/yizhouyu/youtube-manager" target="_blank">repo</a> is a reusable recipe. If you want to publish your own videos with AI, send this post to your own agent, point it at the repo, tweak a little for your channel, and get a fast win the same afternoon - the whole <a href="https://github.com/yizhouyu/youtube-manager/blob/main/.claude/skills/publish-video-chat/SKILL.md" target="_blank"><code>SKILL.md</code></a> is right there. What you add on top is the taste: your channel's voice, your face, your corrections.</p>
+<p>It's also cheap to run. The old version called a metered API key; the rebuild deleted that path - generation now goes through the Claude Code subscription, and transcription runs on a local <a href="https://github.com/ggerganov/whisper.cpp" target="_blank"><code>whisper.cpp</code></a> model. No per-call billing, and the audio never leaves the machine.</p>
+<h2>Learnings</h2>
+<ul>
+<li><strong>The human-AI interface doesn't have to be a UI.</strong> A terminal is enough. A web app can only expose the buttons you anticipated; the agent could catch a misfiled clip precisely because I never built a page for it. You're the rudder, not the cage.</li>
+<li><strong>Make the agent perceive, not just generate.</strong> Because it watches the frames and listens to the audio, it actually knows what the video is - which is the whole reason it can file and describe it sensibly instead of guessing from a filename.</li>
+<li><strong>Autonomy still needs engineering.</strong> The agent supplies judgment, but the repeatable machinery underneath - the transcription pipeline, the YouTube API calls - is deterministic code that runs the same every time. Accuracy and reliability are a pipeline, not a prompt.</li>
+<li><strong>Corrections compound into taste.</strong> Each "no, not like that" becomes durable memory, and the system gets more <em>me</em> with every video - that accumulated taste, not the code, is the thing worth anything. The next rung is closing the loop with real numbers: feeding YouTube analytics back in so it biases future titles and thumbnails toward what actually performed.</li>
+</ul>
+<p>Don't wrap the agent. Talk to it, work inside it, hand it good skills, and let it reach for the things you'd never have built a page for - then let the corrections compound. This is the first version of it I'll ever use, and it's the worst one too.</p>
+<hr>
+<p><em>Further reading: <a href="https://www.superlinear.academy/c/share-your-projects/post-production" target="_blank">课代表 on video post-production</a>. I only found it partway through - after the basics were already working - so it didn't shape the original plan, but I had the agent lean on it to sharpen the covers, and it lands on a lot of the same ideas.</em></p>
+            </div>
+
+            <!-- Footer will be injected here by shared-blog.js -->
+            <div id="blog-post-footer"></div>
+        </article>
+    </div>
+
+    <!-- Shared blog script - handles theme toggle, footer, and all UI elements -->
+    <script src="../../shared-blog.js"></script>
+</body>
+
+</html>
