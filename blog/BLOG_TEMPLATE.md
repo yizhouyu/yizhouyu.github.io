@@ -16,7 +16,7 @@ Copy `blog/posts/cultivation-ai/index.html` to `blog/posts/<slug>/index.html` an
   <meta name="color-scheme" content="light dark">
   <!-- favicon + theme snippet: copy verbatim -->
   <!-- Archivo link + Noto Sans SC link ending in &text= (filled by tools/cjk_subset.py) -->
-  <link rel="stylesheet" href="/assets/site.css">
+  <link rel="stylesheet" href="/assets/site.css?v=ed744d69">
 </head>
 <body>
 <div class="frame">
@@ -53,7 +53,7 @@ Copy `blog/posts/cultivation-ai/index.html` to `blog/posts/<slug>/index.html` an
   </div>
   <!-- footer.foot: copy verbatim -->
 </div>
-<script src="/assets/site.js"></script>
+<script src="/assets/site.js?v=0ff42736"></script>
 </body>
 </html>
 ```

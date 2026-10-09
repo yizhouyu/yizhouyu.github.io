@@ -10,7 +10,7 @@ Personal website for Yizhou Yu (Meta). Static HTML/CSS/JS on GitHub Pages, no bu
 - Repo: https://github.com/yizhouyu/yizhouyu.github.io
 
 ```
-index.html              Home (hero, Now, Writing, Work, Weeks ruler, Films, Contact form; "At a glance" rail)
+index.html              Home (hero, Now, Writing, Work, Vlogs, Weeks ruler, Contact, Work (last); "At a glance" rail)
 assets/site.css         The whole design system (tokens, nav, rail, buttons, post layout)
 assets/site.js          Theme toggle, YZY mark, proof counters, weeks ruler, GoatCounter view counts, post extras, Giscus
 blog/index.html         Essays list
@@ -21,6 +21,8 @@ tools/cjk_subset.py     Regenerates the Chinese font subsets
 tools/verify_bodies.py  Checks post bodies are unchanged vs a git revision
 weeks/                  Served by a separate app; do not touch
 ```
+
+**Cache-busting:** pages link `/assets/site.css?v=<hash>` and `/assets/site.js?v=<hash>` (GitHub Pages caches assets ~10 min). After editing either file, bump the hash in every page: `python3 -c "import hashlib;print(hashlib.md5(open('assets/site.css','rb').read()).hexdigest()[:8])"` (same for site.js), then replace the `?v=` value in index.html, blog/index.html and every blog/posts/*/index.html (and the new-post template).
 
 Pages use root-absolute paths (`/assets/site.css`, `/blog/posts/...`), so test with a local server from the repo root: `python3 -m http.server 8791 --bind 127.0.0.1`.
 
