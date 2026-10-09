@@ -59,9 +59,16 @@
     var sum = n.reduce(function (a, b) { return a + b; }, 0);
     if (sum > 0) el.forEach(function (e) { e.textContent = sum.toLocaleString('en-US'); });
   });
-  /* weeks so far, month-level start (June 1998), computed live */
-  var w = Math.floor((new Date() - new Date(1998, 5, 1)) / 6048e5);
-  document.querySelectorAll('[data-weeks-live]').forEach(function (e) { e.textContent = w.toLocaleString('en-US'); });
+  /* weeks so far: exact count from the /weeks app (number only, DOB stays server-side);
+     falls back to a month-level estimate (June 1998) offline or if the endpoint is unreachable */
+  function setWeeks(w) {
+    document.querySelectorAll('[data-weeks-live]').forEach(function (e) { e.textContent = w.toLocaleString('en-US'); });
+  }
+  setWeeks(Math.floor((new Date() - new Date(1998, 5, 1)) / 6048e5));
+  fetch('/weeks/api/weeks')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) { if (d && d.weeks > 0) setWeeks(d.weeks); })
+    .catch(function () {});
 })();
 
 /* Life-in-Weeks ruler.
