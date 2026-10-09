@@ -17,7 +17,7 @@ Once you have the tracking code:
 
 1. Add the tracking script to both:
    - `blog/index.html` (before closing `</head>` tag)
-   - Add to individual blog posts via `shared-blog.js`
+   - The same tag is in every blog post `<head>` (live counts are rendered by `assets/site.js`)
 
 2. The tracking script will automatically:
    - Count page views

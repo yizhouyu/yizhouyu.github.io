@@ -1,382 +1,68 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working in this repository.
 
-## Repository Overview
+## Overview
 
-Personal website for Yizhou Yu (Software Engineer at Meta). Static site built with vanilla HTML/CSS/JS, hosted on GitHub Pages.
+Personal website for Yizhou Yu (Meta). Static HTML/CSS/JS on GitHub Pages, no build step. Pushing to `master` deploys to production (2-3 min).
 
-**Live URLs:**
-- Primary: https://yizhouyu.dev
-- Secondary: https://yzyzy.dev (both domains serve same content)
+- Primary: https://yizhouyu.dev (a secondary domain also points at the same content; do not mention it in site copy)
+- Repo: https://github.com/yizhouyu/yizhouyu.github.io
 
-**Repository:** https://github.com/yizhouyu/yizhouyu.github.io
+```
+index.html              Home (hero, Now, Writing, Work, Weeks ruler, Films, Contact form; "At a glance" rail)
+assets/site.css         The whole design system (tokens, nav, rail, buttons, post layout)
+assets/site.js          Theme toggle, YZY mark, proof counters, weeks ruler, GoatCounter view counts, post extras, Giscus
+blog/index.html         Essays list
+blog/posts/<slug>/      index.html + images/ (cover.*, cover-thumb.* for list/home)
+blog/BLOG_TEMPLATE.md   Post skeleton + checklist
+data/                   profile.jpg (original), profile-1400.jpg (web copy used on the site)
+tools/cjk_subset.py     Regenerates the Chinese font subsets
+tools/verify_bodies.py  Checks post bodies are unchanged vs a git revision
+weeks/                  Served by a separate app; do not touch
+```
 
-## Site Architecture
+Pages use root-absolute paths (`/assets/site.css`, `/blog/posts/...`), so test with a local server from the repo root: `python3 -m http.server 8791 --bind 127.0.0.1`.
 
-This is a static HTML site with no build process. All pages are standalone HTML files with embedded CSS and JavaScript.
+## Design System: "Bright Grid" (direction E)
 
-**Key sections:**
-- `/index.html` - Main landing page with profile, experience, education, skills
-- `/blog/` - Blog section with posts and search functionality
-- `/weeks/` - "Life in Weeks" visualization
-- `/data/` - Static assets (profile picture, images)
+Hairline-gridded editorial layout. Everything lives in `assets/site.css`; pages keep only page-specific CSS inline (home sections, blog list).
 
-**Shared design system:**
-- Consistent color palette (blue gradient: #3b82f6 to #1e40af)
-- Dark mode toggle (synced via localStorage)
-- Responsive design with mobile breakpoints
-- All pages include Google Analytics (G-T39LJ72QFL) + Cloudflare Analytics + GoatCounter
+- **Tokens** (`:root`, dark overrides under `prefers-color-scheme` and `[data-theme="dark"]`): `--bg #fff / --bg-2 / --ink #0B0D12 / --ink-2 / --muted / --line / --accent #1E45FF (dark #6F8BFF) / --tint / --live`. Never hardcode colors; use tokens.
+- **Type:** Archivo (variable, width 100-125) for everything; Noto Sans SC for Chinese. Display headings use class `d` (weight 900, wide, uppercase, tight leading). Small labels use `cap` (12px caps, muted).
+- **Structure:** `.frame` > `.nav` (hairline cells) + `.page` (main + sticky `.rail` "At a glance") + `.foot`. Sections are `.sec` with numbered `.sec-top`. Chips `.chip`, buttons `.btn`/`.btn.primary`, inline links `.lnk`.
+- **YZY mark:** `<a class="yzy"><span class="y1">Y</span><span class="z">Z</span><span class="y2">Y</span></a>`; the two Ys swap places (palindrome). Footer line: "YZY reads the same both ways."
+- **Dark mode:** toggle in the nav (`[data-theme-toggle]`), stored in localStorage key `theme`. An inline snippet in `<head>` applies it before paint; `?theme=dark|light` overrides it (used for screenshots).
+- **Copy rules:** no "Last updated" or colophon lines. Write "AI-generated content (AIGC)" on first mention.
+- **Responsive:** breakpoints 1100 / 900 / 600px; no horizontal overflow at 375px.
 
-## Development Workflow
+## Analytics (required in `<head>` of every page)
 
-### Making Changes
-1. Edit HTML/CSS/JS files directly (no build step)
-2. Test locally by opening HTML files in browser
-3. Commit changes with descriptive messages
-4. Push to GitHub - changes go live automatically via GitHub Pages (2-3 min deploy time)
+Google tag `G-T39LJ72QFL`, Cloudflare beacon (token `8502e35b873b4becad641200564f6c41`), GoatCounter (`//gc.zgo.at/count.js`, `data-goatcounter="https://yizhouyu.goatcounter.com/count"`). Copy the block from an existing page verbatim. View counts come from `https://yizhouyu.goatcounter.com/counter/<path>.json` via `[data-gc-path]` elements (handled in `site.js`).
 
-### Git Commands
+## Chinese fonts (CJK subsets)
+
+Each page loads Noto Sans SC with `&text=<only the glyphs that page uses>` so it stays small and fully static. After editing any page or adding a post, run:
+
 ```bash
-git status                    # Check what changed
-git add .                     # Stage all changes
-git commit -m "message"       # Commit with message
-git push                      # Deploy to GitHub Pages
+python3 tools/cjk_subset.py          # rewrites the text= parameter in every page
+python3 tools/cjk_subset.py --check  # CI-style check, exit 1 if stale
 ```
 
-**Commit convention:** Include Claude Code attribution in commits when changes are made via Claude Code.
+A new page must contain `<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@500;700;900&display=swap&text=" rel="stylesheet">`; the script fills in `text=`. It scans `index.html` and every `blog/**/index.html`.
 
-## Blog System
+## Publishing a blog post
 
-### Architecture Decision
-- **Chosen approach**: Self-hosted blog at `yizhouyu.dev/blog` (subdirectory)
-- **Rejected alternatives**: Substack, subdomain hosting
-- **Reasoning**:
-  - Best SEO (subdirectory inherits main domain authority)
-  - Full control and ownership
-  - Free GitHub Pages hosting
-  - No platform lock-in or fees
-  - Direct integration with existing site
+Content workflow: the user writes in Google Docs (or pastes content) and attaches images in chat.
 
-## Directory Structure
-```
-blog/
-├── index.html              # Blog listing page with search and statistics
-├── shared-styles.css       # Shared CSS for all blog posts
-├── shared-blog.js          # Shared JavaScript (theme, footer, stats, view counts)
-├── goatcounter-setup.md    # Instructions for setting up GoatCounter
-├── posts/                  # Individual blog posts
-│   ├── [post-slug]/
-│   │   ├── index.html
-│   │   └── images/        # Post-specific images
-└── images/                 # Shared blog images (if needed)
-```
+1. Fetch the doc: `npx @googleworkspace/cli docs documents get --params '{"documentId": "DOC_ID"}' --format json` (ID is between `/d/` and `/edit`; creds in `~/.config/gws/client_secret.json`; re-auth with `npx @googleworkspace/cli auth login --scopes "https://www.googleapis.com/auth/documents,openid,https://www.googleapis.com/auth/userinfo.email"`).
+2. Generate the body HTML with a script from the doc JSON. Do not retype content; preserve hyperlinks (`textStyle.link.url`) as `<a>`.
+3. `mkdir blog/posts/<slug>/images`; save `cover.*` (about 1200 px wide) and a ~800 px `cover-thumb.*`, plus any inline images.
+4. Copy `blog/posts/cultivation-ai/index.html` to the new slug and follow `blog/BLOG_TEMPLATE.md`: update title/description/tags/date/essay number/cover/"Filed", prev/next links, and replace only the contents of `<div class="post-content">`.
+5. Add the entry to `blog/index.html` (newest first, renumber the `no` badges and the count), update the home "Writing" section/"3 essays" counts, and add the new path to the `paths` array in `site.js` (total reads counter). Update "Essay 0N of 0M" and prev/next on the neighbouring posts.
+6. Run `python3 tools/cjk_subset.py`, then preview locally and check light/dark at 1440 and 390 px.
+7. Commit. Push only when the user asks (push deploys to production).
 
-## Publishing Workflow
+Reading time, view counts, the quote-style paragraphs (a paragraph that is only bold text, not ending in a colon) and Giscus comments are all injected by `site.js`; do not add them by hand. Giscus: repo `yizhouyu/blog-comments`, repo-id `R_kgDOQGKylA`, category `Announcements` (`DIC_kwDOQGKylM4Cw4bj`), mapping `pathname`, theme `preferred_color_scheme`. Moderate at https://github.com/yizhouyu/blog-comments/discussions.
 
-### User's Content Creation Process
-1. Write post in Google Docs (any formatting)
-2. Share Google Doc link with Claude Code, OR copy content to chat
-3. Attach any images directly in chat
-4. Provide title and date (if not today)
-
-### Fetching Google Docs via CLI
-Google Workspace CLI (`gws`) is set up and authenticated. To fetch a doc:
-```bash
-npx @googleworkspace/cli docs documents get --params '{"documentId": "DOC_ID"}' --format json
-```
-- Extract the document ID from the Google Docs URL (between `/d/` and `/edit`)
-- OAuth credentials stored at `~/.config/gws/client_secret.json`
-- GCP project: `intricate-idiom-474923-m6`
-- If auth expires, re-run: `npx @googleworkspace/cli auth login --scopes "https://www.googleapis.com/auth/documents,openid,https://www.googleapis.com/auth/userinfo.email"` and open the printed URL with `open`
-
-### Claude's Publishing Process
-1. Fetch content from Google Docs via `gws` CLI (preferred) or receive pasted content
-2. Use a script to parse the gws JSON and generate HTML — do NOT manually re-type content. The script MUST extract hyperlinks from the doc JSON (textStyle.link.url) and preserve them as `<a>` tags in the HTML
-3. Save images to `/blog/images/` with descriptive names
-4. Create post HTML at `/blog/posts/[slug]/index.html`
-5. Update `/blog/index.html` with new post card (newest first)
-6. Commit and push to GitHub
-7. Live in ~2 minutes after GitHub Pages rebuild
-
-### Post Metadata
-- **Title**: User-provided
-- **Date**: Auto-set to today unless specified
-- **URL slug**: Auto-generated from title (e.g., "My Thoughts" → `my-thoughts.html`)
-- **Timestamp**: Displayed in format "October 14, 2025"
-
-### Image Handling
-- **Option 1 (Recommended)**: Attach images in chat
-- **Option 2**: Provide image URLs (for already-hosted images)
-- **Option 3**: Reference local file paths
-- Images saved to `/blog/images/` with naming: `YYYY-MM-DD-post-slug-description.jpg`
-
-## Current Features
-- ✅ Blog index page with post listing
-- ✅ Individual post pages
-- ✅ Real-time search by title and tags
-- ✅ Dark mode support (synced with main site)
-- ✅ Responsive design
-- ✅ Timestamps on all posts
-- ✅ Clean design matching main site
-- ✅ Google Analytics + Cloudflare tracking
-- ✅ **Blog statistics system:**
-  - Reading time calculation (auto-calculated per post)
-  - Total posts count on blog index
-  - Total reading time across all posts
-  - View count tracking (via GoatCounter - needs setup)
-- ✅ **Shared components:**
-  - `shared-styles.css` - Consistent styling across all blog posts
-  - `shared-blog.js` - Theme toggle, footer, tags, reading time, view counts
-
-## Blog Statistics System
-
-### Overview
-The blog includes a comprehensive statistics system that displays useful metrics to readers while remaining privacy-conscious.
-
-### Statistics Displayed
-
-**On Individual Posts:**
-1. **Published Date** - e.g., "October 19, 2025"
-2. **Reading Time** - Auto-calculated from word count (200 words/min average)
-3. **View Count** - Fetched from GoatCounter API (when configured)
-
-**On Blog Index:**
-1. **Total Posts** - Count of all published posts
-2. **Total Reading Time** - Sum of all post reading times
-3. **Total Views** - Aggregate views across all posts (when GoatCounter is configured)
-
-### Implementation Details
-
-**Reading Time Calculation:**
-- Location: `blog/shared-blog.js` → `calculateReadingTime()`
-- Method: Counts words in `.post-content`, divides by 200 words/min
-- Display: Automatically appended to `.post-meta` on post pages
-- Format: "X min read"
-
-**View Count Tracking:**
-- Service: GoatCounter (https://goatcounter.com)
-- Privacy-friendly, no cookies, GDPR compliant
-- Free for personal use
-- Public API for fetching counts
-
-### GoatCounter Setup Instructions
-
-**Status:** Ready to activate (tracking code placeholder in place)
-
-**Setup Steps:**
-1. Create account at https://goatcounter.com/signup
-2. Choose site code (e.g., "yizhouyu")
-3. Get tracking script from dashboard
-4. Update two locations:
-   - `blog/shared-blog.js` → Replace `GOATCOUNTER_CODE = 'YOUR-CODE'`
-   - Add tracking script to `<head>` tags in:
-     - `blog/index.html`
-     - All blog post HTML files (look for comment: "GoatCounter Analytics - ADD YOUR TRACKING CODE HERE")
-
-**Files to Update:**
-```javascript
-// In blog/shared-blog.js
-const GOATCOUNTER_CODE = 'yizhouyu'; // Replace 'YOUR-CODE' with actual code
-```
-
-```html
-<!-- In blog/index.html and blog/posts/*/index.html -->
-<script data-goatcounter="https://yizhouyu.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
-```
-
-**Features Once Activated:**
-- Real-time view counting
-- View counts display on individual posts
-- Total views on blog index
-- Public dashboard at https://[your-code].goatcounter.com
-- No backend needed - pure client-side integration
-
-**Reference Documentation:**
-See `blog/goatcounter-setup.md` for detailed setup instructions.
-
-### Code Architecture
-
-**Shared Components:**
-- `blog/shared-styles.css` - All blog styling (posts, index, dark mode)
-- `blog/shared-blog.js` - All JavaScript functionality:
-  - Theme toggle (synced via localStorage)
-  - Footer rendering
-  - Tag rendering
-  - Reading time calculation
-  - View count fetching
-  - Automatic initialization
-
-**Usage in Blog Posts:**
-```html
-<!-- In <head> -->
-<link rel="stylesheet" href="../../shared-styles.css">
-
-<!-- Before </body> -->
-<script src="../../shared-blog.js"></script>
-```
-
-### Why This Approach?
-
-**Client-Side Only:**
-- No backend required (works with GitHub Pages)
-- No build process needed
-- Instant updates on file change
-
-**Privacy-Conscious:**
-- GoatCounter: no cookies, no personal data tracking
-- Google Analytics: kept for detailed analytics (private use)
-- Cloudflare Analytics: lightweight, privacy-focused
-
-**Reader Value:**
-- Reading time helps readers decide if they have time to read
-- View counts provide social proof
-- Stats show blog is active and growing
-
-## Comments and Reactions System
-
-### Overview
-Blog posts include a full-featured comments and reactions system powered by Giscus.
-
-### Giscus Integration
-
-**What is Giscus:**
-- Comments system powered by GitHub Discussions
-- Privacy-friendly: no tracking, no cookies, no ads
-- Free forever
-- Requires GitHub account to comment (reduces spam)
-
-**Repository:**
-- Comments stored in: https://github.com/yizhouyu/blog-comments
-- Uses GitHub Discussions in "Announcements" category
-- Mapped by pathname (each blog post = one discussion)
-
-**Features:**
-- Full Markdown support in comments
-- Emoji reactions: 👍 ❤️ 🎉 🚀 👀 😄
-- Threaded replies
-- Dark/light theme sync (uses `preferred_color_scheme`)
-- Real-time updates
-
-**Implementation:**
-- Location: `blog/shared-blog.js` → `giscusHTML` constant
-- Automatically injected into all blog posts via `#blog-post-footer` container
-- Styling: `blog/shared-styles.css` → `.giscus-comments`
-
-**Configuration:**
-```javascript
-// In shared-blog.js
-data-repo="yizhouyu/blog-comments"
-data-repo-id="R_kgDOQGAZLw"
-data-category="Announcements"
-data-mapping="pathname"
-data-reactions-enabled="1"
-data-theme="preferred_color_scheme"
-```
-
-**How Comments Work:**
-1. Reader clicks "Sign in with GitHub" button
-2. Authorizes Giscus app (one-time)
-3. Leaves comment or reaction
-4. Comment appears in GitHub Discussions
-5. Comment syncs to blog post in real-time
-
-**Moderation:**
-- All comments visible at: https://github.com/yizhouyu/blog-comments/discussions
-- Can edit/delete/lock discussions from GitHub
-- Can enable/disable reactions per discussion
-- GitHub's built-in moderation tools available
-
-## Potential Future Enhancements
-Consider adding if user requests:
-- Categories/tags filtering (tags already supported, just need filter UI)
-- Social share buttons
-- Table of contents for long posts
-- Code syntax highlighting
-- RSS feed
-- Comment count badges on blog index
-
-## Example Publishing Request
-```
-New post:
-Title: "My thoughts on AI coding assistants"
-Date: October 15, 2025
-
-[post content pasted from Google Docs]
-
-Images: [attached in chat]
-```
-
-### Technical Implementation
-- All blog pages match main site design system (colors, dark mode, responsive)
-- Search implemented with client-side JavaScript (filters on title)
-- Theme preference syncs with main site via localStorage
-- No database - posts are static HTML files
-- Images stored in `/blog/images/` directory
-
-### Git Workflow for Blog Posts
-- Each post = one atomic commit (HTML + images + index update)
-- Commit immediately after creating post
-- Push immediately - auto-deploys to GitHub Pages
-
-## Design System
-
-When creating new pages or sections, maintain consistency:
-
-**Colors:**
-- Primary gradient: `linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)`
-- Background light: `#f7fafc`
-- Background dark: `#1a202c`
-- Text light mode: `#2d3748`
-- Text dark mode: `#e2e8f0`
-- Accent: `#3b82f6`
-
-**Typography:**
-- Font: `-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif`
-- Line height: `1.6`
-
-**Interactive elements:**
-- Buttons use gradient background with shadow
-- Hover states: `translateY(-2px)` with increased shadow
-- Border radius: `20px` (containers), `50px` (buttons), `12px` (inputs)
-- Transitions: `0.3s ease`
-
-**Dark mode:**
-- Toggle button fixed at top-right
-- Preference stored in localStorage key `theme`
-- All pages check theme on load and sync
-
-## Analytics Integration
-
-**IMPORTANT:** All pages must include these tracking scripts in `<head>`:
-
-```html
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-T39LJ72QFL"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-T39LJ72QFL');
-</script>
-
-<!-- Cloudflare Web Analytics -->
-<script defer src='https://static.cloudflareinsights.com/beacon.min.js'
-        data-cf-beacon='{"token": "8502e35b873b4becad641200564f6c41"}'></script>
-
-<!-- GoatCounter Analytics -->
-<script data-goatcounter="https://yizhouyu.goatcounter.com/count"
-        async src="//gc.zgo.at/count.js"></script>
-```
-
-**Why three analytics services:**
-- **Google Analytics**: Comprehensive analytics with detailed insights
-- **Cloudflare Analytics**: Lightweight, privacy-focused, no JavaScript blocking
-- **GoatCounter**: Privacy-friendly, no cookies, public view counter API for displaying page views
-
-**GoatCounter Configuration:**
-- Dashboard: https://yizhouyu.goatcounter.com
-- Setting "Allow adding visitor counts on your website" must be enabled
-- Public counter endpoint: `https://yizhouyu.goatcounter.com/counter/[path].json`
-- Returns: `{"count": "123", "count_unique": "45"}`
+`python3 tools/verify_bodies.py [rev]` confirms each post's body is byte-identical to a git revision (use when re-templating).

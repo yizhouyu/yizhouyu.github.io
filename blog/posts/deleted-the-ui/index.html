@@ -1,65 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-T39LJ72QFL"></script>
     <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-        gtag('config', 'G-T39LJ72QFL');
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-T39LJ72QFL');
     </script>
 
-    <!-- Cloudflare Web Analytics -->
-    <script defer src='https://static.cloudflareinsights.com/beacon.min.js'
-        data-cf-beacon='{"token": "8502e35b873b4becad641200564f6c41"}'></script><!-- End Cloudflare Web Analytics -->
+    <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "8502e35b873b4becad641200564f6c41"}'></script><!-- End Cloudflare Web Analytics -->
 
     <!-- GoatCounter Analytics -->
     <script data-goatcounter="https://yizhouyu.goatcounter.com/count"
             async src="//gc.zgo.at/count.js"></script>
     <!-- End GoatCounter Analytics -->
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>I Deleted the UI and Just Talked to the Agent - Yizhou Yu</title>
     <meta name="description" content="I rebuilt my YouTube publishing tool from a Flask web app into a conversation with an agent in the terminal. The interface between a human and an AI doesn't have to be a UI.">
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'><stop offset='0%25' style='stop-color:%233b82f6'/><stop offset='100%25' style='stop-color:%231e40af'/></linearGradient></defs><rect width='100' height='100' rx='20' fill='url(%23grad)'/><text x='50' y='70' font-family='system-ui,sans-serif' font-size='55' font-weight='bold' fill='white' text-anchor='middle'>YY</text></svg>">
-    <link rel="stylesheet" href="../../shared-styles.css">
-
-    <style>
-        .post-subtitle { font-style: italic; color: #6b7280; margin-top: -8px; }
-        body.dark-mode .post-subtitle { color: #9aa0aa; }
-        .post-content img.diagram { background: #fbfbfd; }
-    </style>
+    <meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231E45FF'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='square'%3E%3Cpath d='M4.5 8.5 8 15.5 11.5 8.5M8 15.5V23.5'/%3E%3Cpath d='M13.5 8.5h6l-6 15h6'/%3E%3Cpath d='M20.5 8.5 24 15.5 27.5 8.5M24 15.5V23.5'/%3E%3C/g%3E%3C/svg%3E">
+<script>
+  /* Theme: ?theme= (screenshots) > localStorage 'theme' > system. Runs before paint. */
+  (function () {
+    var t = null;
+    try { t = new URLSearchParams(location.search).get('theme'); } catch (e) {}
+    if (t !== 'dark' && t !== 'light') { try { t = localStorage.getItem('theme'); } catch (e) {} }
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100..125,400..900;1,100..125,400..700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@500;700;900&display=swap&text=%E4%BB%A3%E4%BF%9E%E5%85%BB%E5%A5%95%E6%88%90%E7%B3%BB%E8%88%9F%E8%A1%A8%E8%AF%BE%EF%BC%9A" rel="stylesheet">
+    <link rel="stylesheet" href="/assets/site.css">
 </head>
-
 <body>
-    <div class="container">
-        <a href="../../" class="back-link">
-            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
-            </svg>
-            Back to Blog
-        </a>
-
-        <article data-tags="AI,Agents,Claude Code,Automation">
-            <header class="post-header">
-                <h1>I Deleted the UI and Just Talked to the Agent</h1>
-                <div class="post-meta">
-                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z" />
-                    </svg>
-                    June 20, 2026
-                </div>
-                <div class="post-tags"></div>
-            </header>
-
-            <img src="./images/cover.svg" alt="I Deleted the UI and Just Talked to the Agent - cover"
-                style="width: 100%; border-radius: 8px; margin-bottom: 40px;">
-
-            <div class="post-content">
+<div class="frame">
+  <header class="nav">
+    <div class="brand">
+      <a class="yzy" href="/" aria-label="YZY — Yizhou Yu, home"><span class="y1">Y</span><span class="z">Z</span><span class="y2">Y</span></a>
+      <span class="who">Yizhou Yu · <span class="zh" lang="zh-Hans">俞奕舟</span></span>
+    </div>
+    <nav class="cells" aria-label="Sections">
+      <a href="/#now">Now</a>
+      <a href="/blog/" aria-current="page">Writing</a>
+      <a href="/#work">Work</a>
+      <a href="/#weeks">Weeks</a>
+      <a href="/#films">Films</a>
+      <a href="/#contact-sec">Contact</a>
+    </nav>
+    <button class="tt" type="button" data-theme-toggle><svg class="tt-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg><span data-theme-label>Light</span></button>
+  </header>
+  <div class="page" style="grid-template-columns:minmax(0,1fr)">
+    <main class="main">
+      <article data-tags="AI,Agents,Claude Code,Automation">
+        <header class="ph">
+          <p class="crumbs"><a class="cap" href="/blog/">← Writing</a><span class="cap">/</span><span class="cap">Essay 03 of 03</span></p>
+          <h1 class="d">I Deleted the UI and Just Talked to the Agent</h1>
+          <p class="dek">I rebuilt my YouTube publishing tool from a Flask web app into a conversation with an agent in the terminal. The interface between a human and an AI doesn't have to be a UI.</p>
+        </header>
+        <div class="facts">
+          <div><span class="cap">Published</span><b><time datetime="2026-06-20">Jun 20, 2026</time></b></div>
+          <div><span class="cap">Reading</span><b data-reading>10 min</b></div>
+          <div><span class="cap">Read by</span><b data-gc-path="/blog/posts/deleted-the-ui/" hidden></b><b class="gc-fallback">—</b></div>
+          <div><span class="cap">Filed</span><b>AI · Agents</b></div>
+        </div>
+        <figure class="cover"><img src="/blog/posts/deleted-the-ui/images/cover.svg" alt="I Deleted the UI and Just Talked to the Agent - cover"></figure>
+        <div class="bodywrap">
+          <div class="post-content">
 <p class="post-subtitle"><em>Reworking my YouTube tool from a web app into a conversation.</em></p>
 <h2>TLDR</h2>
 <ul>
@@ -115,14 +127,21 @@
 <hr>
 <p><em>Further reading: <a href="https://www.superlinear.academy/c/share-your-projects/post-production" target="_blank">课代表 on video post-production</a>. I only found it partway through - after the basics were already working - so it didn't shape the original plan, but I had the agent lean on it to sharpen the covers, and it lands on a lot of the same ideas.</em></p>
             </div>
-
-            <!-- Footer will be injected here by shared-blog.js -->
-            <div id="blog-post-footer"></div>
-        </article>
-    </div>
-
-    <!-- Shared blog script - handles theme toggle, footer, and all UI elements -->
-    <script src="../../shared-blog.js"></script>
+          <footer class="after">
+            <nav class="pn" aria-label="More writing">
+              <a class="prev" href="/blog/posts/cultivation-ai/" rel="prev"><span class="cap">← Older</span><h3>养成系 — The Mindset Shift To Make When Working With AI</h3></a>
+            </nav>
+            <div class="comments" data-giscus></div>
+          </footer>
+        </div>
+      </article>
+    </main>
+  </div>
+  <footer class="foot" data-proposal="colophon-yzy">
+    <a class="yzy" href="/" aria-label="YZY — home"><span class="y1">Y</span><span class="z">Z</span><span class="y2">Y</span></a>
+    <p><b>YZY reads the same both ways.</b></p>
+  </footer>
+</div>
+<script src="/assets/site.js"></script>
 </body>
-
 </html>
