@@ -48,7 +48,7 @@
 /* Live proof figures: total essay reads = sum of GoatCounter counts (static fallback stays if offline). */
 (function () {
   var el = document.querySelectorAll('[data-reads]');
-  if (!el.length) return;
+  if (el.length) {
   var paths = ['/blog/posts/deleted-the-ui/', '/blog/posts/cultivation-ai/', '/blog/posts/vibe-coding-with-claude-code/'];
   Promise.all(paths.map(function (p) {
     return fetch('https://yizhouyu.goatcounter.com/counter/' + encodeURIComponent(p) + '.json')
@@ -59,6 +59,7 @@
     var sum = n.reduce(function (a, b) { return a + b; }, 0);
     if (sum > 0) el.forEach(function (e) { e.textContent = sum.toLocaleString('en-US'); });
   });
+  }
   /* weeks so far: exact count from the /weeks app (number only, DOB stays server-side);
      falls back to a month-level estimate (June 1998) offline or if the endpoint is unreachable */
   function setWeeks(w) {
