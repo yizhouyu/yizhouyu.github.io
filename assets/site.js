@@ -210,6 +210,16 @@
   }).observe(facts, { attributes: true, subtree: true });
 
   /* Giscus comments (repo yizhouyu/blog-comments, mapped by pathname) */
+  function pageTheme() {
+    var t = document.documentElement.getAttribute('data-theme');
+    if (t !== 'dark' && t !== 'light') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return t;
+  }
+  function syncGiscus() {
+    var f = document.querySelector('iframe.giscus-frame');
+    if (f && f.contentWindow) f.contentWindow.postMessage({ giscus: { setConfig: { theme: pageTheme() } } }, 'https://giscus.app');
+  }
+  document.querySelectorAll('[data-theme-toggle]').forEach(function (b) { b.addEventListener('click', syncGiscus); });
   var box = document.querySelector('[data-giscus]');
   if (box) {
     var g = document.createElement('script');
@@ -217,7 +227,7 @@
     [['repo', 'yizhouyu/blog-comments'], ['repo-id', 'R_kgDOQGKylA'], ['category', 'Announcements'],
      ['category-id', 'DIC_kwDOQGKylM4Cw4bj'], ['mapping', 'pathname'], ['strict', '0'],
      ['reactions-enabled', '1'], ['emit-metadata', '0'], ['input-position', 'bottom'],
-     ['theme', 'preferred_color_scheme'], ['lang', 'en']].forEach(function (kv) { g.setAttribute('data-' + kv[0], kv[1]); });
+     ['theme', pageTheme()], ['lang', 'en']].forEach(function (kv) { g.setAttribute('data-' + kv[0], kv[1]); });
     g.setAttribute('crossorigin', 'anonymous');
     g.async = true;
     box.appendChild(g);
