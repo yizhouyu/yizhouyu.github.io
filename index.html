@@ -143,7 +143,8 @@
 .links .v { overflow-wrap: anywhere; }
 .links li { border-bottom: 1px solid var(--line); }
 .links li:nth-child(odd) { border-right: 1px solid var(--line); }
-.links li:last-child { grid-column: 1 / -1; border-bottom: 0; border-right: 0; }
+.links li:last-child:nth-child(odd) { grid-column: 1 / -1; border-right: 0; }
+.links li:last-child, .links li:nth-last-child(2):nth-child(odd) { border-bottom: 0; }
 .links a, .links button { display: flex; flex-direction: column; justify-content: space-between; gap: 14px; height: 100%; min-height: 104px; width: 100%; padding: 16px 18px; text-decoration: none; text-align: left; background: none; border: 0; color: inherit; font: inherit; cursor: pointer; transition: background .15s, color .15s; }
 .links .k { font: 900 22px/1 var(--font); font-stretch: 112%; text-transform: uppercase; display: flex; justify-content: space-between; gap: 8px; }
 .links .v { font-size: 14.5px; color: var(--muted); }
@@ -330,6 +331,7 @@
             <li><a href="https://yizhouyu.dev/weeks/"><span class="k">Weeks <span aria-hidden="true">↗</span></span><span class="v">Life in Weeks, every week so far</span></a></li>
             <li><a href="https://github.com/yizhouyu"><span class="k">GitHub <span aria-hidden="true">↗</span></span><span class="v">yizhouyu</span></a></li>
             <li><a href="https://www.linkedin.com/in/yizhouyu/"><span class="k">LinkedIn <span aria-hidden="true">↗</span></span><span class="v">in/yizhouyu</span></a></li>
+            <li><a href="https://x.com/yizhou_yu"><span class="k">X <span aria-hidden="true">↗</span></span><span class="v">@yizhou_yu</span></a></li>
           </ul>
         </div>
         <div id="contact" hidden><form id="contactForm" action="https://api.web3forms.com/submit" method="POST" class="contact-form">
