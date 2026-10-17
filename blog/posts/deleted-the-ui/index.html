@@ -21,6 +21,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>I Deleted the UI and Just Talked to the Agent - Yizhou Yu</title>
     <meta name="description" content="I rebuilt my YouTube publishing tool from a Flask web app into a conversation with an agent in the terminal. The interface between a human and an AI doesn't have to be a UI.">
+    <link rel="canonical" href="https://yizhouyu.dev/blog/posts/deleted-the-ui/">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Yizhou Yu">
+    <meta property="og:title" content="I Deleted the UI and Just Talked to the Agent">
+    <meta property="og:description" content="I rebuilt my YouTube publishing tool from a Flask web app into a conversation with an agent in the terminal. The interface between a human and an AI doesn't have to be a UI.">
+    <meta property="og:url" content="https://yizhouyu.dev/blog/posts/deleted-the-ui/">
+    <meta property="og:image" content="https://yizhouyu.dev/blog/posts/deleted-the-ui/images/og.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@yizhou_yu">
     <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231E45FF'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='square'%3E%3Cpath d='M4.5 8.5 8 15.5 11.5 8.5M8 15.5V23.5'/%3E%3Cpath d='M13.5 8.5h6l-6 15h6'/%3E%3Cpath d='M20.5 8.5 24 15.5 27.5 8.5M24 15.5V23.5'/%3E%3C/g%3E%3C/svg%3E">
 <script>
@@ -36,7 +47,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,100..125,400..900;1,100..125,400..700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@500;700;900&display=swap&text=%E4%BB%A3%E4%BF%9E%E5%85%BB%E5%A5%95%E6%88%90%E7%B3%BB%E8%88%9F%E8%A1%A8%E8%AF%BE%EF%BC%9A" rel="stylesheet">
-    <link rel="stylesheet" href="/assets/site.css?v=ed744d69">
+    <link rel="stylesheet" href="/assets/site.css?v=c0d77e25">
 </head>
 <body>
 <div class="frame">
@@ -50,7 +61,7 @@
       <a href="/blog/" aria-current="page">Writing</a>
       <a href="/#vlogs">Vlogs</a>
       <a href="/#weeks">Weeks</a>
-      <a href="/#contact-sec">Contact</a>
+      <a href="/#contact-sec">About</a>
       <a href="/#work">Work</a>
     </nav>
     <button class="tt" type="button" data-theme-toggle><svg class="tt-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg><span data-theme-label>Light</span></button>
@@ -59,7 +70,7 @@
     <main class="main">
       <article data-tags="AI,Agents,Claude Code,Automation">
         <header class="ph">
-          <p class="crumbs"><a class="cap" href="/blog/">← Writing</a><span class="cap">/</span><span class="cap">Essay 03 of 03</span></p>
+          <p class="crumbs"><a class="cap" href="/blog/">← Writing</a><span class="cap">/</span><span class="cap">Essay 03 of 04</span></p>
           <h1 class="d">I Deleted the UI and Just Talked to the Agent</h1>
           <p class="dek">I rebuilt my YouTube publishing tool from a Flask web app into a conversation with an agent in the terminal. The interface between a human and an AI doesn't have to be a UI.</p>
         </header>
@@ -83,7 +94,7 @@
 </ul>
 <h2>From a UI to a conversation</h2>
 <p>Last time, I spent a weekend building a proper tool for this - a Flask web app with a three-step upload wizard. What I needed was simple: take a finished video, write a good bilingual title and description, make a thumbnail, upload. I wired in one Claude API call to draft the metadata; everything else was buttons and screens.</p>
-<img src="./images/old-ui-wizard.png" alt="The old tool was a three-step web wizard: pick the files, choose from AI-drafted metadata, review and upload. Each screen could do only what I'd built into it.">
+<img src="./images/old-ui-wizard.webp" alt="The old tool was a three-step web wizard: pick the files, choose from AI-drafted metadata, review and upload. Each screen could do only what I'd built into it.">
 <p>But every screen was a box. The wizard could pick from <em>these</em> files, offer <em>these</em> AI-drafted titles, review <em>these</em> fields, upload - nothing past that. The Claude call lived inside one step, and the screen around it could only ever ask the single question I'd built in: <em>give me some title and description options.</em> The model sitting right there could have watched the footage, caught my mistakes, designed the thumbnail by eye - but the app could only do what I'd built a screen for. <strong>I had capped it at exactly what I'd thought to let it do.</strong></p>
 <p>So I didn't set out to delete the UI. I just started rewriting, talking to the agent instead of clicking through the app, and the interface quietly fell away. I told it what I wanted, not how. When I asked whether it could read the audio so it actually knew what the video was about, it worked the method out itself - reached for <code>ffmpeg</code>, the standard command-line tool for audio and video (which it had installed earlier, unprompted, when it noticed the machine couldn't extract frames), pulled out the audio track, and ran a local transcription. When I asked how it would even get a thumbnail image, it pulled frames straight from the video; its first sweep grabbed one every couple of minutes, I said that was too sparse, and it came back with a dense contact sheet and zoomed into the promising moments. Captions were never in my plan; only once the transcript was sitting there did I realize it could clean them up and upload them as subtitles, so I asked, and it did. The skill I ended up with is just the residue of that back-and-forth - me saying what I wanted, the agent working out how, me nudging, it adjusting.</p>
 <p>And the openness kept paying off in ways a fixed workflow couldn't. Working through a backlog, it stopped on one: the duration didn't match its folder, and the frames showed a clip from a completely different trip than the folder was labeled for. Its note, in effect - <em>you exported the wrong timeline into this folder; I'm not touching it until you confirm.</em> It was right; I'd dropped the wrong export in, and the old wizard would have cheerfully published it under the wrong title. It caught the mistake because it looked at the frames, not the folder name - a check I never built, and never needed to.</p>
@@ -130,6 +141,7 @@
           <footer class="after">
             <nav class="pn" aria-label="More writing">
               <a class="prev" href="/blog/posts/cultivation-ai/" rel="prev"><span class="cap">← Older</span><h3>养成系 — The Mindset Shift To Make When Working With AI</h3></a>
+              <a class="next" href="/blog/posts/claude-code-edits-my-vlogs/" rel="next"><span class="cap">Newer →</span><h3>Claude Code Edits My Travel Vlogs Now</h3></a>
             </nav>
             <div class="comments" data-giscus></div>
           </footer>
@@ -142,6 +154,6 @@
     <p><b>YZY reads the same both ways.</b></p>
   </footer>
 </div>
-<script src="/assets/site.js?v=0ff42736"></script>
+<script src="/assets/site.js?v=cb16c256"></script>
 </body>
 </html>

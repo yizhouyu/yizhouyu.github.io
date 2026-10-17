@@ -49,7 +49,7 @@
 (function () {
   var el = document.querySelectorAll('[data-reads]');
   if (el.length) {
-  var paths = ['/blog/posts/deleted-the-ui/', '/blog/posts/cultivation-ai/', '/blog/posts/vibe-coding-with-claude-code/'];
+  var paths = ['/blog/posts/claude-code-edits-my-vlogs/', '/blog/posts/deleted-the-ui/', '/blog/posts/cultivation-ai/', '/blog/posts/vibe-coding-with-claude-code/'];
   Promise.all(paths.map(function (p) {
     return fetch('https://yizhouyu.goatcounter.com/counter/' + encodeURIComponent(p) + '.json')
       .then(function (r) { return r.ok ? r.json() : { count: '0' }; })
@@ -89,9 +89,13 @@
     ['2019-06', 'Point72 intern'],
     ['2020-05', 'Cornell M.Eng.'],
     ['2020-07', 'Meta, full-time'],
+    ['2022-01', 'Started a YouTube channel'],
     ['2022-08', 'Experimentation Platform'],
+    ['2022-09', 'Started dating my future wife'],
+    ['2024-08', 'Adopted Humi'],
     ['2025-01', 'AI for Analytics'],
     ['2025-06', 'AI for Experimentation'],
+    ['2025-07', 'Married'],
     ['2026-02', 'Agent Captain'],
     ['2026-09', 'AIGC · New AI Bets']
   ];

@@ -19,10 +19,12 @@ blog/BLOG_TEMPLATE.md   Post skeleton + checklist
 data/                   profile.jpg (original), profile-1400.jpg (web copy used on the site)
 tools/cjk_subset.py     Regenerates the Chinese font subsets
 tools/verify_bodies.py  Checks post bodies are unchanged vs a git revision
+404.html                Custom not-found page (GitHub Pages serves it for any missing path)
+sitemap.xml, robots.txt Add each new post to sitemap.xml
 weeks/                  Served by a separate app; do not touch
 ```
 
-**Cache-busting:** pages link `/assets/site.css?v=<hash>` and `/assets/site.js?v=<hash>` (GitHub Pages caches assets ~10 min). After editing either file, bump the hash in every page: `python3 -c "import hashlib;print(hashlib.md5(open('assets/site.css','rb').read()).hexdigest()[:8])"` (same for site.js), then replace the `?v=` value in index.html, blog/index.html and every blog/posts/*/index.html (and the new-post template).
+**Cache-busting:** pages link `/assets/site.css?v=<hash>` and `/assets/site.js?v=<hash>` (GitHub Pages caches assets ~10 min). After editing either file, bump the hash in every page: `python3 -c "import hashlib;print(hashlib.md5(open('assets/site.css','rb').read()).hexdigest()[:8])"` (same for site.js), then replace the `?v=` value in index.html, blog/index.html, 404.html and every blog/posts/*/index.html (and the new-post template).
 
 Pages use root-absolute paths (`/assets/site.css`, `/blog/posts/...`), so test with a local server from the repo root: `python3 -m http.server 8791 --bind 127.0.0.1`.
 
@@ -37,6 +39,10 @@ Hairline-gridded editorial layout. Everything lives in `assets/site.css`; pages 
 - **Dark mode:** toggle in the nav (`[data-theme-toggle]`), stored in localStorage key `theme`. An inline snippet in `<head>` applies it before paint; `?theme=dark|light` overrides it (used for screenshots).
 - **Copy rules:** no "Last updated" or colophon lines. Write "AI-generated content (AIGC)" on first mention.
 - **Responsive:** breakpoints 1100 / 900 / 600px; no horizontal overflow at 375px.
+
+## Link previews (required in `<head>` of every page)
+
+Each page has a canonical link plus Open Graph and Twitter tags (`summary_large_image`, `@yizhou_yu`). Home and blog list use `/assets/og.jpg` (1200×630 card); each post uses its own `images/og.jpg`. The block is in `blog/BLOG_TEMPLATE.md`.
 
 ## Analytics (required in `<head>` of every page)
 

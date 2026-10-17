@@ -13,10 +13,21 @@ Copy `blog/posts/cultivation-ai/index.html` to `blog/posts/<slug>/index.html` an
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>POST TITLE - Yizhou Yu</title>
   <meta name="description" content="ONE-SENTENCE DEK">
+  <link rel="canonical" href="https://yizhouyu.dev/blog/posts/SLUG/">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="Yizhou Yu">
+  <meta property="og:title" content="POST TITLE">
+  <meta property="og:description" content="ONE-SENTENCE DEK">
+  <meta property="og:url" content="https://yizhouyu.dev/blog/posts/SLUG/">
+  <meta property="og:image" content="https://yizhouyu.dev/blog/posts/SLUG/images/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@yizhou_yu">
   <meta name="color-scheme" content="light dark">
   <!-- favicon + theme snippet: copy verbatim -->
   <!-- Archivo link + Noto Sans SC link ending in &text= (filled by tools/cjk_subset.py) -->
-  <link rel="stylesheet" href="/assets/site.css?v=ed744d69">
+  <link rel="stylesheet" href="/assets/site.css?v=c0d77e25">
 </head>
 <body>
 <div class="frame">
@@ -53,7 +64,7 @@ Copy `blog/posts/cultivation-ai/index.html` to `blog/posts/<slug>/index.html` an
   </div>
   <!-- footer.foot: copy verbatim -->
 </div>
-<script src="/assets/site.js?v=0ff42736"></script>
+<script src="/assets/site.js?v=cb16c256"></script>
 </body>
 </html>
 ```
@@ -65,4 +76,5 @@ Copy `blog/posts/cultivation-ai/index.html` to `blog/posts/<slug>/index.html` an
 - First `<h2>` is numbered 01 automatically.
 - Omit the `prev` or `next` link at either end of the series.
 - After editing: `python3 tools/cjk_subset.py`.
-- Checklist: list entry in `blog/index.html` + home "Writing" + `paths` in `assets/site.js`; cover and `cover-thumb`; dark mode and 375 px checked.
+- Checklist: list entry in `blog/index.html` + home "Writing" + `paths` in `assets/site.js` + a `<url>` in `sitemap.xml`; cover, `cover-thumb` and a 1200×630 `og.jpg` (JPEG, for link previews); dark mode and 375 px checked.
+- Embed a YouTube video with `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/VIDEO_ID" title="…" loading="lazy" allowfullscreen …></iframe></div>` plus a `<p class="video-cap">` with a "Watch on YouTube" link.
