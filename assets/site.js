@@ -45,6 +45,15 @@
   });
 })();
 
+/* Years at Meta, counted from the July 2020 start date so the copy never goes stale. */
+(function () {
+  var els = document.querySelectorAll('[data-meta-years]');
+  if (!els.length) return;
+  var y = Math.floor((new Date() - new Date(2020, 6, 1)) / (365.25 * 864e5));
+  var W = ['Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen'];
+  els.forEach(function (e) { e.textContent = e.getAttribute('data-meta-years') === 'word' ? (W[y] || y) : y; });
+})();
+
 /* Live proof figures: total essay reads = sum of GoatCounter counts (static fallback stays if offline). */
 (function () {
   var el = document.querySelectorAll('[data-reads]');

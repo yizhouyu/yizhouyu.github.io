@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Yizhou Yu · Writing</title>
+    <link>https://yizhouyu.dev/blog/</link>
+    <description>Essays on working with AI agents.</description>
+    <language>en</language>
+    <lastBuildDate>Sat, 17 Oct 2026 13:00:00 +0000</lastBuildDate>
+    <atom:link href="https://yizhouyu.dev/blog/feed.xml" rel="self" type="application/rss+xml"/>
+    <item>
+      <title>Claude Code Edits My Travel Vlogs Now</title>
+      <link>https://yizhouyu.dev/blog/posts/claude-code-edits-my-vlogs/</link>
+      <guid isPermaLink="true">https://yizhouyu.dev/blog/posts/claude-code-edits-my-vlogs/</guid>
+      <pubDate>Sat, 17 Oct 2026 13:00:00 +0000</pubDate>
+      <description>For my last dozen-plus travel vlogs I never opened a video editor. Here is the workflow, what I still do, and why the cuts keep getting more like me.</description>
+    </item>
+    <item>
+      <title>I Deleted the UI and Just Talked to the Agent</title>
+      <link>https://yizhouyu.dev/blog/posts/deleted-the-ui/</link>
+      <guid isPermaLink="true">https://yizhouyu.dev/blog/posts/deleted-the-ui/</guid>
+      <pubDate>Sat, 20 Jun 2026 13:00:00 +0000</pubDate>
+      <description>I rebuilt my YouTube publishing tool from a Flask web app into a conversation with an agent in the terminal. The interface between a human and an AI doesn&#x27;t have to be a UI — and once it wasn&#x27;t boxed into my forms, it started doing things no screen of mine could.</description>
+    </item>
+    <item>
+      <title>养成系 — The Mindset Shift To Make When Working With AI</title>
+      <link>https://yizhouyu.dev/blog/posts/cultivation-ai/</link>
+      <guid isPermaLink="true">https://yizhouyu.dev/blog/posts/cultivation-ai/</guid>
+      <pubDate>Sat, 07 Mar 2026 13:00:00 +0000</pubDate>
+      <description>Your AI agent isn&#x27;t a product that works out of the box — it&#x27;s a partner that compounds with every interaction. Every correction is compound interest.</description>
+    </item>
+    <item>
+      <title>I Shipped Three Projects in 48 Hours Using Claude Code (And Wrote Zero Line of Code)</title>
+      <link>https://yizhouyu.dev/blog/posts/vibe-coding-with-claude-code/</link>
+      <guid isPermaLink="true">https://yizhouyu.dev/blog/posts/vibe-coding-with-claude-code/</guid>
+      <pubDate>Sun, 19 Oct 2025 13:00:00 +0000</pubDate>
+      <description>How I built a YouTube Manager, personal website, and Life in Weeks visualization in one weekend using Claude Code — 137 commits, zero lines of code written by hand.</description>
+    </item>
+  </channel>
+</rss>

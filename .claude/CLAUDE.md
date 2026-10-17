@@ -21,6 +21,7 @@ tools/cjk_subset.py     Regenerates the Chinese font subsets
 tools/verify_bodies.py  Checks post bodies are unchanged vs a git revision
 404.html                Custom not-found page (GitHub Pages serves it for any missing path)
 sitemap.xml, robots.txt Add each new post to sitemap.xml
+blog/feed.xml           RSS feed, generated from blog/index.html by tools/build_feed.py (rerun after adding a post)
 weeks/                  Served by a separate app; do not touch
 ```
 
@@ -68,7 +69,7 @@ Content workflow: the user writes in Google Docs (or pastes content) and attache
 3. `mkdir blog/posts/<slug>/images`; save `cover.*` (about 1200 px wide) and a ~800 px `cover-thumb.*`, plus any inline images.
 4. Copy `blog/posts/cultivation-ai/index.html` to the new slug and follow `blog/BLOG_TEMPLATE.md`: update title/description/tags/date/essay number/cover/"Filed", prev/next links, and replace only the contents of `<div class="post-content">`.
 5. Add the entry to `blog/index.html` (newest first, renumber the `no` badges and the count), update the home "Writing" section/"3 essays" counts, and add the new path to the `paths` array in `site.js` (total reads counter). Update "Essay 0N of 0M" and prev/next on the neighbouring posts.
-6. Run `python3 tools/cjk_subset.py`, then preview locally and check light/dark at 1440 and 390 px.
+6. Add the post to `sitemap.xml`, run `python3 tools/build_feed.py` and `python3 tools/cjk_subset.py`, then preview locally and check light/dark at 1440 and 390 px.
 7. Commit. Push only when the user asks (push deploys to production).
 
 Reading time, view counts, the quote-style paragraphs (a paragraph that is only bold text, not ending in a colon) and Giscus comments are all injected by `site.js`; do not add them by hand. Giscus: repo `yizhouyu/blog-comments`, repo-id `R_kgDOQGKylA`, category `Announcements` (`DIC_kwDOQGKylM4Cw4bj`), mapping `pathname`, theme `preferred_color_scheme`. Moderate at https://github.com/yizhouyu/blog-comments/discussions.

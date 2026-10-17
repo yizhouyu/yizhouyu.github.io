@@ -14,6 +14,7 @@ Copy `blog/posts/cultivation-ai/index.html` to `blog/posts/<slug>/index.html` an
   <title>POST TITLE - Yizhou Yu</title>
   <meta name="description" content="ONE-SENTENCE DEK">
   <link rel="canonical" href="https://yizhouyu.dev/blog/posts/SLUG/">
+  <link rel="alternate" type="application/rss+xml" title="Yizhou Yu · Writing" href="https://yizhouyu.dev/blog/feed.xml">
   <meta property="og:type" content="article">
   <meta property="og:site_name" content="Yizhou Yu">
   <meta property="og:title" content="POST TITLE">
@@ -65,7 +66,7 @@ Copy `blog/posts/cultivation-ai/index.html` to `blog/posts/<slug>/index.html` an
   </div>
   <!-- footer.foot: copy verbatim -->
 </div>
-<script src="/assets/site.js?v=605d8024"></script>
+<script src="/assets/site.js?v=254b0fcb"></script>
 </body>
 </html>
 ```
@@ -77,5 +78,5 @@ Copy `blog/posts/cultivation-ai/index.html` to `blog/posts/<slug>/index.html` an
 - First `<h2>` is numbered 01 automatically.
 - Omit the `prev` or `next` link at either end of the series.
 - After editing: `python3 tools/cjk_subset.py`.
-- Checklist: list entry in `blog/index.html` + home "Writing" + `paths` in `assets/site.js` + a `<url>` in `sitemap.xml`; cover, `cover-thumb` and a 1200×630 `og.jpg` (JPEG, for link previews); dark mode and 375 px checked.
+- Checklist: list entry in `blog/index.html` + home "Writing" + `paths` in `assets/site.js` + a `<url>` in `sitemap.xml` + `python3 tools/build_feed.py` (RSS); cover, `cover-thumb` and a 1200×630 `og.jpg` (JPEG, for link previews); dark mode and 375 px checked.
 - Embed a YouTube video with `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/VIDEO_ID" title="…" loading="lazy" allowfullscreen …></iframe></div>` plus a `<p class="video-cap">` with a "Watch on YouTube" link.
