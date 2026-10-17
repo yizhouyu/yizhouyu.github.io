@@ -135,7 +135,7 @@
         var txt = ms.map(function (x) { return x.when + ' — ' + x.label; }).join('; ');
         el.setAttribute('aria-label', txt);
         el.setAttribute('data-label', txt);
-        ms.forEach(function (x) { notes.push('<b>' + x.mon + '</b> ' + x.label); });
+        ms.forEach(function (x) { notes.push('<span class="it"><b>' + x.mon + '</b> ' + x.label + '</span>'); });
       } else {
         el = document.createElement('i');
         el.className = 'c';
@@ -149,7 +149,7 @@
       }
       row.appendChild(el);
     }
-    if (y === now.getFullYear()) notes.push('<b>' + MON[now.getMonth()] + '</b> <span class="now-t">This week</span>');
+    if (y === now.getFullYear()) notes.push('<span class="it"><b>' + MON[now.getMonth()] + '</b> <span class="now-t">This week</span></span>');
     var n = document.createElement('span');
     n.className = 'ruler-note';
     n.innerHTML = notes.join('<span class="sep"> · </span>');

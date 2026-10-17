@@ -64,7 +64,7 @@ Copy `blog/posts/cultivation-ai/index.html` to `blog/posts/<slug>/index.html` an
   </div>
   <!-- footer.foot: copy verbatim -->
 </div>
-<script src="/assets/site.js?v=cb16c256"></script>
+<script src="/assets/site.js?v=d5a65f97"></script>
 </body>
 </html>
 ```
