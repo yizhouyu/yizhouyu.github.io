@@ -12,7 +12,7 @@ Personal website for Yizhou Yu (Meta). Static HTML/CSS/JS on GitHub Pages, no bu
 ```
 index.html              Home (hero, Now, Writing, Work, Vlogs, Weeks ruler, Contact, Work (last); "At a glance" rail)
 assets/site.css         The whole design system (tokens, nav, rail, buttons, post layout)
-assets/site.js          Theme toggle, YZY mark, proof counters, weeks ruler, GoatCounter view counts, post extras, Giscus
+assets/site.js          Theme toggle, YZY mark, proof counters, weeks ruler, GoatCounter view counts, post extras, Giscus (ruler milestones come from /weeks/api/milestones: flag an event with `home: true` in life-in-weeks-nextjs life-events.ts; the list in site.js is only the offline fallback)
 blog/index.html         Essays list
 blog/posts/<slug>/      index.html + images/ (cover.*, cover-thumb.* for list/home)
 blog/BLOG_TEMPLATE.md   Post skeleton + checklist

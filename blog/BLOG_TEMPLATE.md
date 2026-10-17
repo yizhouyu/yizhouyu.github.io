@@ -24,7 +24,7 @@ Copy `blog/posts/cultivation-ai/index.html` to `blog/posts/<slug>/index.html` an
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:site" content="@yizhou_yu">
-  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"POST TITLE","description":"ONE-SENTENCE DEK","datePublished":"YYYY-MM-DD","dateModified":"YYYY-MM-DD","url":"https://yizhouyu.dev/blog/posts/SLUG/","mainEntityOfPage":"https://yizhouyu.dev/blog/posts/SLUG/","image":"https://yizhouyu.dev/blog/posts/SLUG/images/og.jpg","keywords":"TAGS","inLanguage":"en","author":{"@type":"Person","name":"Yizhou Yu","url":"https://yizhouyu.dev/"}}</script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","headline":"POST TITLE","description":"ONE-SENTENCE DEK","datePublished":"YYYY-MM-DDT09:00:00-04:00","dateModified":"YYYY-MM-DDT09:00:00-04:00","url":"https://yizhouyu.dev/blog/posts/SLUG/","mainEntityOfPage":"https://yizhouyu.dev/blog/posts/SLUG/","image":"https://yizhouyu.dev/blog/posts/SLUG/images/og.jpg","keywords":"TAGS","inLanguage":"en","author":{"@type":"Person","name":"Yizhou Yu","url":"https://yizhouyu.dev/"}}</script>
   <meta name="color-scheme" content="light dark">
   <!-- favicon + theme snippet: copy verbatim -->
   <!-- Archivo link + Noto Sans SC link ending in &text= (filled by tools/cjk_subset.py) -->
@@ -65,7 +65,7 @@ Copy `blog/posts/cultivation-ai/index.html` to `blog/posts/<slug>/index.html` an
   </div>
   <!-- footer.foot: copy verbatim -->
 </div>
-<script src="/assets/site.js?v=d5a65f97"></script>
+<script src="/assets/site.js?v=605d8024"></script>
 </body>
 </html>
 ```

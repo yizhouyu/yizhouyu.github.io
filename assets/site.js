@@ -74,14 +74,16 @@
 
 /* Life-in-Weeks ruler.
    Month-level precision only (exact DOB stays server-side in the /weeks app).
-   One row per calendar year, 52 columns = weeks of that year. Lived weeks only — no future tail. */
+   One row per calendar year, 52 columns = weeks of that year. Lived weeks only — no future tail.
+   Milestones come from /weeks/api/milestones (events flagged `home` in life-events.ts);
+   M below is only the offline fallback, drawn first and replaced when the endpoint answers. */
 (function () {
   var root = document.querySelector('[data-ruler]');
   if (!root) return;
   var WEEKS_URL = root.getAttribute('data-href') || 'https://yizhouyu.dev/weeks/';
   var START = new Date(1998, 5, 1);              // June 1998
   var US = new Date(2016, 7, 1), NYC = new Date(2020, 6, 1);
-  var M = [
+  var FALLBACK = [
     ['1998-06', 'Born in Shanghai'],
     ['2009-09', 'Shanghai Foreign Language School'],
     ['2016-08', 'Came to the US for college · Cornell'],
@@ -103,17 +105,19 @@
   var DAY = 864e5;
   function wk(d) { return Math.min(51, Math.floor((d - new Date(d.getFullYear(), 0, 1)) / (7 * DAY))); }
   var now = new Date();
+  var grid = root.querySelector('.ruler-grid');
+  var cap = root.querySelector('.ruler-cap');
+  var defaultCap = cap ? cap.innerHTML : '';
+  var nowKey = now.getFullYear() + ':' + wk(now);
+
+  function build(M) {
   var byCell = {};
   M.forEach(function (m) {
     var p = m[0].split('-'), d = new Date(+p[0], +p[1] - 1, 1);
     var k = d.getFullYear() + ':' + wk(d);
     (byCell[k] = byCell[k] || []).push({ when: MON[d.getMonth()] + ' ' + d.getFullYear(), mon: MON[d.getMonth()], label: m[1] });
   });
-  var grid = root.querySelector('.ruler-grid');
-  var cap = root.querySelector('.ruler-cap');
-  var defaultCap = cap ? cap.innerHTML : '';
   var lived = 0, frag = document.createDocumentFragment();
-  var nowKey = now.getFullYear() + ':' + wk(now);
   for (var y = START.getFullYear(); y <= now.getFullYear(); y++) {
     var row = document.createElement('div');
     row.className = 'ruler-row' + (y % 5 === 0 ? ' is-5' : '');
@@ -156,7 +160,16 @@
     row.appendChild(n);
     frag.appendChild(row);
   }
+  grid.textContent = '';
   grid.appendChild(frag);
+  }
+  build(FALLBACK);
+  fetch('/weeks/api/milestones')
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (d && d.milestones && d.milestones.length) build(d.milestones.map(function (m) { return [m.month, m.label]; }));
+    })
+    .catch(function () {});
   var weeksSoFar = Math.floor((now - START) / (7 * DAY));   // computed live from today's date
   root.querySelectorAll('[data-weeks-count]').forEach(function (el) { el.textContent = weeksSoFar.toLocaleString('en-US'); });
   if (cap) defaultCap = cap.innerHTML;
