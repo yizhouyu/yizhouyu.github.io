@@ -35,7 +35,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@500;700;900&display=swap&text=%E4%B8%80%E4%B9%94%E4%B9%A6%E4%BA%9A%E4%BF%9E%E5%85%BB%E5%91%A8%E5%93%88%E5%A5%95%E5%B3%A1%E5%B8%83%E5%BE%B7%E6%88%90%E6%A0%91%E6%B2%B3%E6%B2%BB%E6%B9%96%E7%9A%84%E7%B3%BB%E7%BA%A6%E8%88%9F%E8%B0%B7%E9%80%8A%E9%87%8C%E9%A9%AC%EF%BC%9A" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@500;700;900&display=swap&text=%E4%B8%80%E4%B8%9C%E4%BD%9B%E4%BF%9E%E5%85%BB%E5%8A%A0%E5%8D%97%E5%91%A8%E5%9B%BD%E5%A5%95%E5%B7%9E%E6%88%90%E7%9A%84%E7%B3%BB%E7%BD%97%E7%BE%8E%E8%88%9F%E8%A5%BF%E8%BE%BE%E9%87%8C%EF%BC%9A" rel="stylesheet">
 <link rel="stylesheet" href="/assets/site.css?v=ed744d69">
 <style>
 
@@ -132,6 +132,8 @@
 .films .zh { display: block; margin-top: 3px; font-size: 14px; font-weight: 500; color: var(--muted); }
 .films .cap { margin-top: 8px; display: block; }
 .places { margin-top: 22px; }
+.places a.chip { text-decoration: none; }
+.places a.chip:hover { color: var(--accent); border-color: var(--accent); }
 
 /* ---------- About + elsewhere ---------- */
 .about { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; margin-top: 36px; border: 1px solid var(--line); }
@@ -288,12 +290,12 @@
         <div class="sec-top"><span class="n">03</span><span class="cap">Vlogs · Yizhou的一周</span></div>
         <h2 class="d" id="vlogs-h">100+ travel vlogs on YouTube.</h2>
         <ul class="films">
-          <li><a href="https://www.youtube.com/watch?v=yiEhSrxdL84"><div class="th"><img loading="lazy" src="https://i.ytimg.com/vi/yiEhSrxdL84/hqdefault.jpg" alt=""></div><div class="tx"><h3>Lake George<span class="zh" lang="zh-Hans">乔治湖</span></h3><span class="cap">Adirondacks ③</span></div></a></li>
-          <li><a href="https://www.youtube.com/watch?v=VdUr8_HDEWA"><div class="th"><img loading="lazy" src="https://i.ytimg.com/vi/VdUr8_HDEWA/hqdefault.jpg" alt=""></div><div class="tx"><h3>Hudson River Gorge<span class="zh" lang="zh-Hans">哈德逊河峡谷</span></h3><span class="cap">Adirondacks ②</span></div></a></li>
-          <li><a href="https://www.youtube.com/watch?v=4jUFO8WD1MY"><div class="th"><img loading="lazy" src="https://i.ytimg.com/vi/4jUFO8WD1MY/hqdefault.jpg" alt=""></div><div class="tx"><h3>Malibu<span class="zh" lang="zh-Hans">马里布</span></h3><span class="cap">Southern California</span></div></a></li>
-          <li><a href="https://www.youtube.com/watch?v=klM9B-tRCCU"><div class="th"><img loading="lazy" src="https://i.ytimg.com/vi/klM9B-tRCCU/hqdefault.jpg" alt=""></div><div class="tx"><h3>Joshua Tree<span class="zh" lang="zh-Hans">约书亚树</span></h3><span class="cap">Southern California</span></div></a></li>
+          <li><a href="https://www.youtube.com/playlist?list=PLRiAfpSsHcGg"><div class="th"><img loading="lazy" src="https://i.ytimg.com/vi/T60tq9GbsSQ/maxresdefault.jpg" alt=""></div><div class="tx"><h3>US East Coast<span class="zh" lang="zh-Hans">美东</span></h3><span class="cap">Playlist</span></div></a></li>
+          <li><a href="https://www.youtube.com/playlist?list=PLDGc-ufziWLg"><div class="th"><img loading="lazy" src="https://i.ytimg.com/vi/FykPeJM-hCA/maxresdefault.jpg" alt=""></div><div class="tx"><h3>California<span class="zh" lang="zh-Hans">加州</span></h3><span class="cap">Playlist</span></div></a></li>
+          <li><a href="https://www.youtube.com/playlist?list=PLeM_dltYVHw8"><div class="th"><img loading="lazy" src="https://i.ytimg.com/vi/mSgvJEV_Um4/maxresdefault.jpg" alt=""></div><div class="tx"><h3>Florida<span class="zh" lang="zh-Hans">佛罗里达</span></h3><span class="cap">Playlist</span></div></a></li>
+          <li><a href="https://www.youtube.com/playlist?list=PLQ2mgRpDUmrY"><div class="th"><img loading="lazy" src="https://i.ytimg.com/vi/6axgAbD-ihA/maxresdefault.jpg" alt=""></div><div class="tx"><h3>Arizona · Utah · Las Vegas<span class="zh" lang="zh-Hans">美国西南</span></h3><span class="cap">Playlist</span></div></a></li>
         </ul>
-        <ul class="chips places" aria-label="Places in the vlogs"><li class="chip soft">Alaska</li><li class="chip soft">Hawaii</li><li class="chip soft">New Mexico</li><li class="chip soft">Southern California</li><li class="chip soft">San Diego</li><li class="chip soft">Sequoia &amp; Kings Canyon</li><li class="chip soft">Tampa</li><li class="chip soft">US Virgin Islands</li><li class="chip soft">Adirondacks</li></ul>
+        <ul class="chips places" aria-label="More playlists"><li><a class="chip soft" href="https://www.youtube.com/playlist?list=PLH614kb8gz2I">Alaska</a></li><li><a class="chip soft" href="https://www.youtube.com/playlist?list=PLcz_DpnqfB9o">Pacific Northwest</a></li><li><a class="chip soft" href="https://www.youtube.com/playlist?list=PLONyvYxU0_O0">Caribbean</a></li><li><a class="chip soft" href="https://www.youtube.com/playlist?list=PLEGANIJ4IkFc">New Mexico</a></li><li><a class="chip soft" href="https://www.youtube.com/playlist?list=PLEA312DsdaQM">Colorado</a></li><li><a class="chip soft" href="https://www.youtube.com/playlist?list=PLXLQByaYUN2Y">Mexico</a></li><li><a class="chip soft" href="https://www.youtube.com/playlist?list=PL4VdgmoPQDBArI79wOTRl3zeHZP918QNY">New York City</a></li></ul>
         <p class="sec-more"><a class="lnk" href="https://www.youtube.com/@yizhou8888">Watch on YouTube ↗</a></p>
       </section>
 
@@ -321,14 +323,14 @@
           <div class="txt">
             <p>I grew up in Shanghai and majored in computer science at Cornell. I've been at Meta since 2020 and live in New York with my wife. I speak Chinese, English and French.</p>
             <p>Before moving to AI agents, I built the compute behind the next generation of Deltoid, Meta's A/B test evaluation tool, and before that, privacy-preserving systems using techniques like differential privacy.</p>
-            <p>Here I write about what working with AI agents has actually changed. Outside work I make travel vlogs on <a href="https://www.youtube.com/@yizhou8888">YouTube</a>, read a lot, and live with <a href="https://www.instagram.com/little.humi/">Humi</a>, a cat with her own Instagram following.</p>
+            <p>Here I write about what working with AI agents has actually changed. Outside work I make vlogs on <a href="https://www.youtube.com/@yizhou8888">YouTube</a>, read a lot, and live with <a href="https://www.instagram.com/little.humi/">Humi</a>, a cat with her own Instagram following.</p>
           </div>
           <ul class="links">
             <li><button type="button" data-contact-toggle aria-expanded="false" aria-controls="contact"><span class="k">Email <span aria-hidden="true">→</span></span><span class="v">Write to me through a short form</span></button></li>
             <li><a href="https://x.com/yizhou_yu"><span class="k">X <span aria-hidden="true">↗</span></span><span class="v">@yizhou_yu</span></a></li>
             <li><a href="https://github.com/yizhouyu"><span class="k">GitHub <span aria-hidden="true">↗</span></span><span class="v">yizhouyu</span></a></li>
             <li><a href="https://www.linkedin.com/in/yizhouyu/"><span class="k">LinkedIn <span aria-hidden="true">↗</span></span><span class="v">in/yizhouyu</span></a></li>
-            <li><a href="https://www.youtube.com/@yizhou8888"><span class="k">YouTube <span aria-hidden="true">↗</span></span><span class="v">Yizhou的一周 · travel vlogs</span></a></li>
+            <li><a href="https://www.youtube.com/@yizhou8888"><span class="k">YouTube <span aria-hidden="true">↗</span></span><span class="v">Yizhou的一周 · vlogs</span></a></li>
             <li><a href="https://www.instagram.com/yizhou8888"><span class="k">Instagram <span aria-hidden="true">↗</span></span><span class="v">@yizhou8888</span></a></li>
             <li><a href="https://yizhouyu.dev/weeks/"><span class="k">Weeks <span aria-hidden="true">↗</span></span><span class="v">Life in Weeks, every week so far</span></a></li>
             <li><a href="https://www.instagram.com/little.humi/"><span class="k">Humi <span aria-hidden="true">↗</span></span><span class="v">@little.humi · the cat</span></a></li>
