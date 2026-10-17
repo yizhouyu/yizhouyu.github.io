@@ -6,7 +6,7 @@ Guidance for Claude Code when working in this repository.
 
 Personal website for Yizhou Yu (Meta). Static HTML/CSS/JS on GitHub Pages, no build step. Pushing to `master` deploys to production (2-3 min).
 
-- Primary: https://yizhouyu.dev (a secondary domain also points at the same content; do not mention it in site copy)
+- Domain: https://yizhouyu.dev (`CNAME`); yizhouyu.github.io 301-redirects to it. The old second domain yzyzy.dev was released in Oct 2026: never link to it.
 - Repo: https://github.com/yizhouyu/yizhouyu.github.io
 
 ```
