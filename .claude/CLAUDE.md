@@ -42,7 +42,7 @@ Hairline-gridded editorial layout. Everything lives in `assets/site.css`; pages 
 
 ## Link previews (required in `<head>` of every page)
 
-Each page has a canonical link plus Open Graph and Twitter tags (`summary_large_image`, `@yizhou_yu`). Home and blog list use `/assets/og.jpg` (1200×630 card); each post uses its own `images/og.jpg`. The block is in `blog/BLOG_TEMPLATE.md`.
+Each page has a canonical link plus Open Graph and Twitter tags (`summary_large_image`, `@yizhou_yu`). Home and blog list use `/assets/og.jpg` (1200×630 card); each post uses its own `images/og.jpg`. Pages also carry JSON-LD structured data (home: Person + WebSite; blog list: Blog; posts: BlogPosting). The block is in `blog/BLOG_TEMPLATE.md`; keep the Person `sameAs` links in `index.html` in sync with the Elsewhere links.
 
 ## Analytics (required in `<head>` of every page)
 
