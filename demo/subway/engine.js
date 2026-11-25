@@ -200,3 +200,14 @@ export function pathTo(net, R, k, rmax = R.K - 1) {
   return legs;
 }
 export function roundsCount(net, R, r, lim) { let n = 0; for (const [, m] of net.D.complexes) for (const s of m) if (R.arr[r][s] <= lim) { n++; break; } return n; }
+
+// trains that leave complex cx during minute m: the one whose successor (same line, direction and platform stop) comes latest
+export function missed(net, cx, m) {
+  const { C, D } = net; let best = null; m = ((Math.floor(m) % 1440) + 1440) % 1440;
+  for (let k = net.first[m]; k < C.n && C.dep[k] < (m + 1) * 60; k++) {
+    if (net.cof[C.from[k]] !== cx) continue; const p = D.tripPat[C.trip[k]], r = D.patRoute[p]; let d = null;
+    for (let j = k + 1, add = 0, g = 0; g < C.n; j++, g++) { if (j >= C.n) { j = 0; add = DAY; } if (C.from[j] === C.from[k]) { const q = D.tripPat[C.trip[j]]; if (D.patRoute[q] === r && D.patDir[q] === D.patDir[p]) { d = C.dep[j] + add; break; } } }
+    if (d !== null && (!best || d - C.dep[k] > best.gap)) best = { r, gap: d - C.dep[k], head: D.heads[D.patHead[p]], dep: C.dep[k], next: d };
+  }
+  return best;
+}

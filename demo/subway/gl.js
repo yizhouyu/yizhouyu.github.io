@@ -12,7 +12,7 @@ void main(){
   if(mode>.5&&mode<1.5){ int h=int(A.x+.5); vec4 t=texelFetch(hops,ivec2(h%64,h/64),0);
     tt=vec4(mix(t.x,t.y,A.y),mix(t.x,t.y,A.z),mix(t.z,t.w,1.-A.y),mix(t.z,t.w,1.-A.z));
     float e=min(min(tt.x,tt.y),min(tt.z,tt.w)); if(e>min(lim,reveal)){ gl_Position=vec4(2.,2.,2.,1.); return; } 
-    w=wide*mix(1.25,.62,clamp(e/lim,0.,1.)); }
+    w=wide; }
   if(mode>1.5&&mode<2.5){ w=wide*A.x; col.a*=A.y; }
   s0=(a.xy/a.w*.5+.5)*res; s1=(b.xy/b.w*.5+.5)*res;
   vec2 d=s1-s0; float L=length(d); d=L>.01?d/L:vec2(1.,0.); vec2 n=vec2(-d.y,d.x);
@@ -23,13 +23,13 @@ void main(){
 const CAPS_F = `#version 300 es
 precision highp float;
 in vec2 px; flat in vec2 s0,s1; flat in float w; in vec4 col; flat in vec4 tt; flat in float ex;
-uniform float mode, lim, reveal, flip, dpr, glow, fade; uniform vec3 casing; uniform vec4 tint; uniform float caseW, boost; out vec4 o;
+uniform float mode, lim, reveal, flip, dpr, glow, fade; uniform vec3 casing; uniform vec4 tint; uniform float caseW, boost, dark; out vec4 o;
 void main(){
   vec2 d=s1-s0; float L2=dot(d,d); float h=L2>1e-4?clamp(dot(px-s0,d)/L2,0.,1.):0.; float r=length(px-s0-d*h); float hw=w*.5;
-  vec3 c=mix(col.rgb,tint.rgb,tint.a); float al=col.a*fade, front=0.;
+  vec3 c=mix(col.rgb,tint.rgb,tint.a); if(dark>.5){ float l=dot(c,vec3(.3,.59,.11)); c=l>.4?c*.42:c; } float al=col.a*fade, front=0.;
   if(mode>.5&&mode<1.5){ float t=min(mix(tt.x,tt.y,h),mix(tt.z,tt.w,h)); float T=min(lim,reveal); if(t>T) discard;
-    front=reveal<lim*1.05?smoothstep(lim*.09,0.,T-t):smoothstep(lim*.02,0.,T-t)*.6; al*=mix(1.,.55,clamp(t/lim,0.,1.)); }
-  c+=flip*max(0.,.3-dot(c,vec3(.3,.59,.11)))*vec3(.9,1.1,1.5)*step(tint.a,.99); c=mix(c,vec3(1.),boost*flip+front*.75*flip);
+    front=reveal<lim*1.05?smoothstep(lim*.06,0.,T-t)*.8:0.; }
+  c+=flip*max(0.,.52-dot(c,vec3(.3,.59,.11)))*vec3(.8,.95,1.05)*step(tint.a,.99); c=mix(c,vec3(1.),boost*flip+front*.75*flip);
   float core=1.-smoothstep(hw-.6,hw+.6,r);
   float cs=caseW>0.?(1.-smoothstep(hw+caseW-.6,hw+caseW+.6,r)):0.;
   vec4 base=vec4(c,1.)*core*al; base+=vec4(casing,1.)*max(cs-core,0.)*al*.9;
@@ -65,14 +65,22 @@ const SEA_F = `#version 300 es
 precision highp float; in vec2 p; uniform sampler2D sh; uniform float ext, mpp; uniform vec3 water, ink; uniform float a; out vec4 o;
 void main(){ vec2 u=vec2(p.x+ext,ext-p.y)/(2.*ext); float inside=step(0.,u.x)*step(u.x,1.)*step(0.,u.y)*step(u.y,1.);
   float d=texture(sh,u).r*2040.; float f=max(fwidth(d),.5); float s=max(mpp,16.); float l=0.;
-  float D[7]=float[7](4.5,9.5,15.5,22.5,30.5,39.5,49.5);
-  for(int i=0;i<7;i++){ float k=D[i]*s; if(k<1960.) l=max(l,(1.-smoothstep(.35,1.25,abs(d-k)/f))*(1.-float(i)/7.5)); }
+  float D[7]=float[7](4.5,10.5,18.5,22.5,30.5,39.5,49.5);
+  for(int i=0;i<3;i++){ float k=D[i]*s; if(k<1960.) l=max(l,(1.-smoothstep(.35,1.25,abs(d-k)/f))*(1.-float(i)/7.5)); }
   vec3 c=mix(water,ink,l*a*inside); o=vec4(c,1.); }`;
 const DISC_V = `#version 300 es
-precision highp float; layout(location=0) in vec2 q; layout(location=1) in vec3 P; uniform mat4 M; out vec2 v; void main(){ v=q; gl_Position=M*vec4(P.xy+q*P.z,0.,1.); }`;
+precision highp float; layout(location=0) in vec2 q; layout(location=1) in vec3 P; uniform mat4 M; uniform float pad; out vec2 v; flat out float R; void main(){ R=P.z; v=q*(P.z+pad); gl_Position=M*vec4(P.xy+v,0.,1.); }`;
 const DISC_F = `#version 300 es
-precision mediump float; in vec2 v; uniform vec4 c; uniform vec3 bg; uniform float flip; out vec4 o;
-void main(){ float r=length(v); if(r>1.) discard; float k=(1.-r*r); k=k*k*c.a+.10*c.a*(1.-smoothstep(.97,1.,r)); o=vec4(mix(bg,c.rgb,k),1.); }`;
+precision highp float; in vec2 v; flat in float R; out vec4 o; void main(){ float s=.5+(R-length(v))/1400.; o=vec4(s); }`;
+// the shape of "here you can get to": one even tone with one thin edge, soft in its corners
+const REACH_V = `#version 300 es
+precision highp float; layout(location=0) in vec2 q; out vec2 u; void main(){ u=q*.5+.5; gl_Position=vec4(q,0.,1.); }`;
+const REACH_F = `#version 300 es
+precision highp float; in vec2 u; uniform sampler2D f; uniform vec2 px; uniform float b, w; uniform vec4 fill, edge, ghost; out vec4 o;
+vec2 at(vec2 p){ vec2 s=texture(f,p).rg*2.; for(int i=0;i<12;i++){ float a=float(i)*.5236, r=i%2==0?1.:.55; s+=texture(f,p+vec2(cos(a),sin(a))*r*b*px).rg; } return s/14.; }
+void main(){ vec2 v=at(u); vec2 g=max(fwidth(v),vec2(1e-4)); vec2 d=(v-.462)/g; float in_=clamp(d.x+.5,0.,1.);
+  float e=1.-smoothstep(w*.5-.5,w*.5+.7,abs(d.x)); if(v.x<.02) e=0.; float k=clamp(d.y+.5,0.,1.);
+  vec4 c=vec4(ghost.rgb,1.)*ghost.a*k; c=mix(c,vec4(fill.rgb,1.),fill.a*in_); c=mix(c,vec4(edge.rgb,1.),e*edge.a); o=c; }`;
 const DOT_V = `#version 300 es
 precision highp float; layout(location=0) in vec2 q; layout(location=1) in vec4 P; uniform mat4 M; uniform vec2 res; uniform float dpr; out vec2 v; flat out float R,k;
 void main(){ vec4 a=M*vec4(P.xy,0.,1.); R=P.z*dpr; k=P.w; v=q*(R+2.*dpr); vec2 s=(a.xy/a.w*.5+.5)*res+v; gl_Position=vec4(s/res*2.-1.,0.,1.); if(a.w<0.) gl_Position=vec4(2.); }`;
@@ -87,7 +95,7 @@ export function makeGL(canvas, net, city, shoreImg) {
   const D = net.D;
   const prog = (v, f) => { const p = gl.createProgram(); for (const [t, s] of [[gl.VERTEX_SHADER, v], [gl.FRAGMENT_SHADER, f]]) { const x = gl.createShader(t); gl.shaderSource(x, s); gl.compileShader(x); if (!gl.getShaderParameter(x, gl.COMPILE_STATUS) && !gl.isContextLost()) throw Error(gl.getShaderInfoLog(x)); gl.attachShader(p, x); } gl.linkProgram(p); if (!gl.getProgramParameter(p, gl.LINK_STATUS) && !gl.isContextLost()) throw Error(gl.getProgramInfoLog(p));
     const u = {}; const n = gl.getProgramParameter(p, gl.ACTIVE_UNIFORMS); for (let i = 0; i < n; i++) { const a = gl.getActiveUniform(p, i); u[a.name] = gl.getUniformLocation(p, a.name); } return { p, u }; };
-  const pc = prog(CAPS_V, CAPS_F), pl = prog(CELL_V, CELL_F), pf = prog(FILL_V, FILL_F), ps = prog(SEA_V, SEA_F), pd = prog(DISC_V, DISC_F), pt = prog(DOT_V, DOT_F);
+  const pc = prog(CAPS_V, CAPS_F), pl = prog(CELL_V, CELL_F), pf = prog(FILL_V, FILL_F), ps = prog(SEA_V, SEA_F), pd = prog(DISC_V, DISC_F), pr = prog(REACH_V, REACH_F), pt = prog(DOT_V, DOT_F);
   const buf = (data, usage = gl.STATIC_DRAW, target = gl.ARRAY_BUFFER) => { const b = gl.createBuffer(); gl.bindBuffer(target, b); gl.bufferData(target, data, usage); return b; };
   const attr = (b, loc, n, type, norm, stride, off, div) => { gl.bindBuffer(gl.ARRAY_BUFFER, b); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, n, type, norm, stride, off); gl.vertexAttribDivisor(loc, div); };
   const qb = buf(new Float32Array([0, -1, 1, -1, 0, 1, 1, 1])), qc = buf(new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]));
@@ -123,7 +131,15 @@ export function makeGL(canvas, net, city, shoreImg) {
   const cf = new Uint8Array(nCell); for (let i = 0; i < nCell; i++) cf[i] = city.cellF[nCell - 1 - i];
   const litRev = new Uint8Array(nCell), litB = buf(litRev, gl.DYNAMIC_DRAW), cellPB = buf(cp), cellFB = buf(cf);
   const cellV = vao(() => { attr(qb, 0, 2, gl.FLOAT, false, 0, 0, 0); attr(cellPB, 1, 2, gl.UNSIGNED_SHORT, true, 0, 0, 1); attr(cellFB, 2, 1, gl.UNSIGNED_BYTE, true, 0, 0, 1); attr(litB, 3, 1, gl.UNSIGNED_BYTE, true, 0, 0, 1); });
-  const discA = new Float32Array(net.nS * 3), discB = buf(discA, gl.DYNAMIC_DRAW), discV = vao(() => { attr(qc, 0, 2, gl.FLOAT, false, 0, 0, 0); attr(discB, 1, 3, gl.FLOAT, false, 0, 0, 1); });
+  const discA = new Float32Array(net.nS * 3), ghostA = new Float32Array(net.nS * 3), discB = buf(discA, gl.DYNAMIC_DRAW), discV = vao(() => { attr(qc, 0, 2, gl.FLOAT, false, 0, 0, 0); attr(discB, 1, 3, gl.FLOAT, false, 0, 0, 1); });
+  const fieldT = gl.createTexture(), fieldF = gl.createFramebuffer(); let fw = 0, fh = 0;
+  function field(S) {
+    const w = Math.max(1, Math.round(canvas.width / 2)), h = Math.max(1, Math.round(canvas.height / 2)); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, fieldT);
+    if (w !== fw || h !== fh) { fw = w; fh = h; gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); for (const [p, v] of [[gl.TEXTURE_MIN_FILTER, gl.LINEAR], [gl.TEXTURE_MAG_FILTER, gl.LINEAR], [gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE], [gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE]]) gl.texParameteri(gl.TEXTURE_2D, p, v); gl.bindFramebuffer(gl.FRAMEBUFFER, fieldF); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, fieldT, 0); }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fieldF); gl.viewport(0, 0, w, h); gl.disable(gl.STENCIL_TEST); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); gl.enable(gl.BLEND); gl.blendEquation(gl.MAX); gl.blendFunc(gl.ONE, gl.ONE); gl.useProgram(pd.p); gl.bindVertexArray(discV); gl.uniformMatrix4fv(pd.u.M, false, M); gl.uniform1f(pd.u.pad, 700);
+    for (const [arr, n, r] of [[discA, S.discN, true], [ghostA, S.ghostN, false]]) if (n) { gl.colorMask(r, !r, false, false); gl.bindBuffer(gl.ARRAY_BUFFER, discB); gl.bufferSubData(gl.ARRAY_BUFFER, 0, arr.subarray(0, n * 3)); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n); }
+    gl.colorMask(true, true, true, true); gl.blendEquation(gl.FUNC_ADD); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, canvas.width, canvas.height);
+  }
   const dotA = new Float32Array(net.nS * 4), dotB = buf(dotA, gl.DYNAMIC_DRAW), dotV = vao(() => { attr(qc, 0, 2, gl.FLOAT, false, 0, 0, 0); attr(dotB, 1, 4, gl.FLOAT, false, 0, 0, 1); });
   const trP = packer(6000), trB = buf(trP.ab, gl.DYNAMIC_DRAW), trV = capsVao(trB);
   const rtP = packer(3000), rtB = buf(rtP.ab, gl.DYNAMIC_DRAW), rtV = capsVao(rtB);
@@ -134,7 +150,7 @@ export function makeGL(canvas, net, city, shoreImg) {
   function resize(w, h, d) { W = w; H = h; dpr = d; canvas.width = Math.round(w * d); canvas.height = Math.round(h * d); }
   // camera: looks at (x,y,0); mpp = metres per CSS pixel there; ox/oy = where on screen (CSS px from centre, +y down) that point sits
   function setCam(c) {
-    Object.assign(cam, c); const F = cam.F = 1.25 * Math.max(W, H), dist = cam.mpp * F, cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    Object.assign(cam, c); { const q = slotOf(cam.mpp); cam.slot = q * cam.mpp; cam.lw = q * .7; } const F = cam.F = 1.25 * Math.max(W, H), dist = cam.mpp * F, cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
     // camera axes in world: right r, up u, back b
     const r = [cy, sy, 0], f = [-sy, cy, 0], b = [-f[0] * sp, -f[1] * sp, cp], u = [f[0] * cp, f[1] * cp, sp];
     const e = [cam.x + b[0] * dist, cam.y + b[1] * dist, b[2] * dist]; cam.ex = e[0]; cam.ey = e[1]; cam.ez = e[2]; cam.r = r; cam.u = u; cam.b = b;
@@ -147,42 +163,45 @@ export function makeGL(canvas, net, city, shoreImg) {
 
   function caps(v, n, o) {
     const u = pc.u; gl.useProgram(pc.p); gl.bindVertexArray(v); gl.uniformMatrix4fv(u.M, false, M); gl.uniform2f(u.res, canvas.width, canvas.height);
-    gl.uniform1f(u.slot, (o.slot || 0) / 40); gl.uniform1f(u.wide, o.w * dpr); gl.uniform1f(u.dpr, dpr); gl.uniform1f(u.mode, o.mode || 0); gl.uniform1f(u.lim, o.lim || 1); gl.uniform1f(u.reveal, o.reveal ?? 1e9); gl.uniform1f(u.flip, o.night || 0); gl.uniform1f(u.glow, o.glow || 0); gl.uniform1f(u.fade, o.fade ?? 1); gl.uniform1f(u.caseW, (o.caseW || 0) * dpr); gl.uniform3fv(u.casing, o.casing || [0, 0, 0]); gl.uniform1f(u.boost, o.boost || 0); gl.uniform4f(u.tint, ...(o.tint ? [...o.tint, o.tintA ?? 1] : [0, 0, 0, 0]));
+    gl.uniform1f(u.slot, (o.slot || 0) / 40); gl.uniform1f(u.wide, o.w * dpr); gl.uniform1f(u.dpr, dpr); gl.uniform1f(u.mode, o.mode || 0); gl.uniform1f(u.lim, o.lim || 1); gl.uniform1f(u.reveal, o.reveal ?? 1e9); gl.uniform1f(u.flip, o.night || 0); gl.uniform1f(u.glow, o.glow || 0); gl.uniform1f(u.fade, o.fade ?? 1); gl.uniform1f(u.caseW, (o.caseW || 0) * dpr); gl.uniform3fv(u.casing, o.casing || [0, 0, 0]); gl.uniform1f(u.boost, o.boost || 0); gl.uniform1f(u.dark, o.dark || 0); gl.uniform4f(u.tint, ...(o.tint ? [...o.tint, o.tintA ?? 1] : [0, 0, 0, 0]));
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, hopTex); gl.uniform1i(u.hops, 0); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, warpTex); gl.uniform1i(u.warps, 1); gl.uniform1f(u.warp, o.warp || 0); gl.activeTexture(gl.TEXTURE0);
     gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n);
   }
   const fill = (m, c, a) => { gl.useProgram(pf.p); gl.bindVertexArray(m.v); gl.uniformMatrix4fv(pf.u.M, false, M); gl.uniform1f(pf.u.ext, city.ext); gl.uniform4f(pf.u.c, ...c, a); gl.drawElements(gl.TRIANGLES, m.n, m.t, 0); };
   const mix3 = (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+  function slotOf(m) { return Math.max(3.3, Math.min(8, 130 / m)); }
   function frame(S) {
     const P = S.pal, night = S.night, w = S.warp || 0, g = 1 - w, water = mix3(P.water, P.bg, w);
     gl.viewport(0, 0, canvas.width, canvas.height); gl.clearColor(...water, 1); gl.clearStencil(0); gl.clear(gl.COLOR_BUFFER_BIT | gl.STENCIL_BUFFER_BIT); gl.disable(gl.DEPTH_TEST); gl.enable(gl.BLEND); gl.blendEquation(gl.FUNC_ADD); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
-    const px = Math.max(.8, Math.min(2.2, 62 / cam.mpp)), slotPx = Math.max(1.15, Math.min(6.5, 120 / cam.mpp)), slot = slotPx * cam.mpp; cam.slot = slot;
+    const px = .9, slotPx = slotOf(cam.mpp), slot = slotPx * cam.mpp; cam.slot = slot; const lw = slotPx * .7; cam.lw = lw;
+    if (w <= .5 && (S.discN || S.ghostN)) { field(S); gl.clearColor(...water, 1); }
     if (g > .01) {
       gl.useProgram(ps.p); gl.bindVertexArray(seaV); gl.uniformMatrix4fv(ps.u.M, false, M); gl.uniform1f(ps.u.ext, city.ext); gl.uniform1f(ps.u.mpp, cam.mpp); gl.uniform3fv(ps.u.water, water); gl.uniform3fv(ps.u.ink, P.shore); gl.uniform1f(ps.u.a, P.lineA * g); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, shTex); gl.uniform1i(ps.u.sh, 0); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       const landC = mix3(P.bg, P.land, g);
       fill(other, mix3(water, P.other, g), 1);
       gl.enable(gl.STENCIL_TEST); gl.stencilFunc(gl.ALWAYS, 1, 1); gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE); fill(land, landC, 1); gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP);
       gl.stencilFunc(gl.EQUAL, 1, 1); fill(park, P.park, P.parkA * g);
-      // the ground you can walk to
-      if (S.discN && g > .3) { gl.blendEquation(night > .5 ? gl.MAX : gl.MIN); gl.blendFunc(gl.ONE, gl.ONE); gl.useProgram(pd.p); gl.bindVertexArray(discV); gl.bindBuffer(gl.ARRAY_BUFFER, discB); gl.bufferSubData(gl.ARRAY_BUFFER, 0, discA.subarray(0, S.discN * 3)); gl.uniformMatrix4fv(pd.u.M, false, M); gl.uniform4f(pd.u.c, ...P.wash, P.washA * S.reachA * g); gl.uniform3fv(pd.u.bg, landC); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, S.discN); gl.blendEquation(gl.FUNC_ADD); gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); }
+      // the shape of the answer
+      if (w <= .5 && (S.discN || S.ghostN)) { gl.useProgram(pr.p); gl.bindVertexArray(seaV); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, fieldT); gl.uniform1i(pr.u.f, 0); gl.uniform2f(pr.u.px, 1 / fw, 1 / fh); gl.uniform1f(pr.u.b, Math.max(1.5, 300 / cam.mpp * dpr / 2)); gl.uniform1f(pr.u.w, 1.15 * dpr); const k = S.reachA * g * g * (1 - S.homesA); gl.uniform4f(pr.u.fill, ...P.reach, P.reachF * k); gl.uniform4f(pr.u.edge, ...P.reachEdge, P.edgeA * k); gl.uniform4f(pr.u.ghost, ...P.ink, .2 * S.ghostK * g); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); }
       gl.disable(gl.STENCIL_TEST);
-      caps(outo.v, outo.n, { w: 1, fade: .6 * P.shoreA * g, tint: P.shore }); caps(outl.v, outl.n, { w: 1.2, fade: P.shoreA * g, tint: P.shore });
+      caps(outo.v, outo.n, { w: 1, fade: .6 * P.shoreA * g, tint: P.shore }); caps(outl.v, outl.n, { w: 1, fade: P.shoreA * g, tint: P.shore });
       // tracks: thin ink first
-      caps(baseV, nb, { w: px * (S.ride ? 1.6 : 1), slot, fade: (S.ride ? .95 : P.baseA) * g, night: night * .0, boost: P.baseBoost, tint: S.ride ? null : P.baseTint, tintA: P.baseTintA });
-      // city strokes
-      gl.useProgram(pl.p); gl.bindVertexArray(cellV); const u = pl.u; gl.uniformMatrix4fv(u.M, false, M); gl.uniform2f(u.res, canvas.width, canvas.height); gl.uniform1f(u.ext, city.ext); gl.uniform1f(u.ex, Math.max(1.6, Math.min(7, cam.mpp / 5)) * g); gl.uniform1f(u.w, Math.max(1, Math.min(14, 46 / cam.mpp)) * dpr * .95); gl.uniform1f(u.lim, S.lim); gl.uniform1f(u.reveal, S.reachA < .02 ? -1 : S.reveal); gl.uniform1f(u.dpr, dpr); gl.uniform3fv(u.dim, P.dim); gl.uniform1f(u.dimA, P.dimA * g); gl.uniform3fv(u.lit, P.lit); gl.uniform3fv(u.litTop, P.litTop); gl.uniform1f(u.geo, g); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, nCell);
+      if (S.pickA > .01) caps(baseV, nb, { w: 2.2, slot, fade: .5 * S.pickA * g }); if (S.pickA < .99) caps(baseV, nb, { w: S.ride ? 2 : px, slot, fade: (S.ride ? .42 : P.ghostA + (P.baseA - P.ghostA) * S.allA) * g * (1 - S.pickA), tint: S.ride ? null : P.baseTint, tintA: 1 - .5 * S.allA });
+      // homes: only when asked for, only the lit ones
+      if (S.homesA > .01) { gl.useProgram(pl.p); gl.bindVertexArray(cellV); const u = pl.u; gl.uniformMatrix4fv(u.M, false, M); gl.uniform2f(u.res, canvas.width, canvas.height); gl.uniform1f(u.ext, city.ext); gl.uniform1f(u.ex, Math.max(1.6, Math.min(7, cam.mpp / 5)) * g * S.homesA); gl.uniform1f(u.w, Math.max(1, Math.min(14, 46 / cam.mpp)) * dpr * .95); gl.uniform1f(u.lim, S.lim); gl.uniform1f(u.reveal, S.reachA < .02 ? -1 : S.reveal); gl.uniform1f(u.dpr, dpr); gl.uniform3fv(u.dim, P.dim); gl.uniform1f(u.dimA, 0.); gl.uniform3fv(u.lit, P.lit); gl.uniform3fv(u.litTop, P.litTop); gl.uniform1f(u.geo, g * S.homesA * .9); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, nCell); }
     }
-    if (w > .01) caps(hopV, nh, { w: px * 1.1, slot, mode: 3, fade: P.baseA * w * .9, tint: P.baseTint, tintA: P.baseTintA, warp: w });
+    if (w > .5 && S.discN) { field(S); gl.useProgram(pr.p); gl.bindVertexArray(seaV); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, fieldT); gl.uniform1i(pr.u.f, 0); gl.uniform2f(pr.u.px, 1 / fw, 1 / fh); gl.uniform1f(pr.u.b, 1); gl.uniform1f(pr.u.w, 1.15 * dpr); const k = S.reachA * (w * 2 - 1); gl.uniform4f(pr.u.fill, ...P.reach, P.reachF * k * .7); gl.uniform4f(pr.u.edge, ...P.ink, 0); gl.uniform4f(pr.u.ghost, ...P.ink, 0); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); }
+    if (w > .01 && w < .99) caps(hopV, nh, { w: px, slot, mode: 3, fade: P.ghostA * w * (1 - w) * 4, tint: P.baseTint, tintA: 1, warp: w });
     // tracks you can ride
-    if (S.reachA > .02) caps(hopV, nh, { w: Math.max(2, Math.min(6, 150 / cam.mpp)), slot, mode: 1, lim: S.lim, reveal: S.reveal, night, glow: P.glow * .48, boost: .04, fade: S.reachA, casing: P.casing, caseW: P.caseW, warp: w });
-    if (S.routeN) { gl.bindBuffer(gl.ARRAY_BUFFER, rtB); gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Uint8Array(rtP.ab, 0, S.routeN * ST)); caps(rtV, S.routeN, { w: Math.max(3.4, Math.min(6.5, 170 / cam.mpp)), slot, mode: 2, night, glow: 0, boost: 0, casing: P.routeCase, caseW: 0 }); }
+    if (S.reachA > .02) { const o = { slot, mode: 1, lim: S.lim, reveal: S.reveal, night, glow: 0, warp: w }; caps(hopV, nh, { ...o, w: lw + 2.2, fade: S.reachA * .9 * (1 - S.homesA), tint: w > .5 ? P.bg : P.reachMix }); if (night < .5 && w < .5) caps(hopV, nh, { ...o, w: lw + 1.3, dark: 1, fade: S.reachA * (1 - S.homesA) }); caps(hopV, nh, { ...o, w: w > .5 ? lw * .7 : lw, boost: .04, fade: S.reachA * (1 - .68 * S.homesA) }); }
+    if (S.routeN) { gl.bindBuffer(gl.ARRAY_BUFFER, rtB); gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Uint8Array(rtP.ab, 0, S.routeN * ST)); caps(rtV, S.routeN, { w: Math.max(3.6, lw * 1.25), slot, mode: 2, night, glow: 0, boost: 0, casing: P.routeCase, caseW: 0 }); }
     // trains
-    if (S.trainN) { gl.bindBuffer(gl.ARRAY_BUFFER, trB); gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Uint8Array(trP.ab, 0, S.trainN * ST)); caps(trV, S.trainN, { w: Math.max(2.6, Math.min(6.5, 130 / cam.mpp)), slot, mode: 2, night, glow: .9 * night, boost: .6, casing: P.trainCase, caseW: 0 }); }
+    if (S.trainN) { gl.bindBuffer(gl.ARRAY_BUFFER, trB); gl.bufferSubData(gl.ARRAY_BUFFER, 0, new Uint8Array(trP.ab, 0, S.trainN * ST)); caps(trV, S.trainN, { w: S.ride ? Math.max(3, Math.min(6.5, 130 / cam.mpp)) : Math.max(2.4, lw * .9), slot, mode: 2, night, glow: .5 * night * S.allA, boost: .55, casing: P.trainCase, caseW: 0 }); }
     // stations
     gl.useProgram(pt.p); gl.bindVertexArray(dotV); gl.bindBuffer(gl.ARRAY_BUFFER, dotB); gl.bufferSubData(gl.ARRAY_BUFFER, 0, dotA); gl.uniformMatrix4fv(pt.u.M, false, M); gl.uniform2f(pt.u.res, canvas.width, canvas.height); gl.uniform1f(pt.u.dpr, dpr); gl.uniform3fv(pt.u.ink, P.dotInk); gl.uniform3fv(pt.u.fill, P.dotFill); gl.uniform3fv(pt.u.far, P.ink); gl.uniform1f(pt.u.farA, P.farA); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, net.nS);
   }
   function uploadWarp(a) { warpData.set(a); gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, warpTex); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 64, HR, gl.RGBA, gl.FLOAT, warpData); gl.activeTexture(gl.TEXTURE0); }
   function uploadHops(a) { hopData.set(a); gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, hopTex); gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, 64, HR, gl.RGBA, gl.FLOAT, hopData); }
   function uploadLit(lit) { for (let i = 0, j = nCell - 1; i < nCell; i++, j--) litRev[i] = lit[j]; gl.bindBuffer(gl.ARRAY_BUFFER, litB); gl.bufferSubData(gl.ARRAY_BUFFER, 0, litRev); }
-  return { gl, cam, M, setCam, project, unproject, resize, frame, uploadHops, uploadLit, uploadWarp, discA, dotA, trP, rtP, rgb, get W() { return W; }, get H() { return H; }, get dpr() { return dpr; } };
+  return { gl, cam, M, setCam, project, unproject, resize, frame, slotOf, uploadHops, uploadLit, uploadWarp, ghostA, discA, dotA, trP, rtP, rgb, get W() { return W; }, get H() { return H; }, get dpr() { return dpr; } };
 }

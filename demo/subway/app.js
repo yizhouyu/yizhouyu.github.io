@@ -5,6 +5,7 @@ import { makeFlat } from "./flat.js";
 import { T } from "./i18n.js";
 import * as sky from "./sky.js";
 import { initUI } from "./ui.js";
+import { makeLabels } from "./labels.js";
 
 const $ = s => document.querySelector(s);
 const store = { get: k => { try { return localStorage.getItem("subway." + k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem("subway." + k, v); } catch { } } };
@@ -14,7 +15,7 @@ A.lang = ["en", "zh"].includes(qs.get("lang")) ? qs.get("lang") : ["en", "zh"].i
 A.t = () => T[A.lang];
 A.calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
 A.phone = () => innerWidth < 1000 && !(innerHeight < 520);
-const S = A.S = { cx: 0, m: 8.5 * 60, lim: 30, ch: 9, view: "map", dest: -1, step: 1, theme: "auto", tool: "", playing: false, follow: null, game: null, hide: false };
+const S = A.S = { cx: 0, m: 8.5 * 60, lim: 30, ch: 9, view: "map", dest: -1, step: 1, theme: "auto", tool: "", playing: false, follow: null, game: null, hide: false, alt: -1, route: false, focus: null, homes: false, trains: false, all: false };
 
 // ---------- load
 async function bin(u) { const r = await fetch(u); if (!r.ok) throw Error(u + " " + r.status); const b = await r.arrayBuffer(), h = new Uint8Array(b, 0, 2); if (h[0] !== 31 || h[1] !== 139) return b; return new Response(new Blob([b]).stream().pipeThrough(new DecompressionStream("gzip"))).arrayBuffer(); }
@@ -58,12 +59,13 @@ A.fromURL = () => {
   if (h.has("s")) { const c = A.byId(h.get("s")); if (c >= 0) S.cx = c; }
   if (h.has("t")) { const x = /^(\d{1,2})(\d{2})$/.exec(h.get("t")); if (x) S.m = Math.min(1439, +x[1] * 60 + +x[2]); }
   S.lim = n("n", 30, 10, 60); S.ch = n("c", 9, 0, 9); if (S.ch > 2) S.ch = 9; S.view = h.get("v") === "min" ? "min" : "map";
-  S.dest = h.has("d") ? A.byId(h.get("d")) : -1; if (S.dest === S.cx) S.dest = -1;
+  S.dest = h.has("d") ? A.byId(h.get("d")) : -1; if (S.dest === S.cx) S.dest = -1; S.alt = h.has("e") ? A.byId(h.get("e")) : -1;
   if (["auto", "light", "dark"].includes(h.get("l"))) S.theme = h.get("l");
+  { const y = h.get("y") || ""; S.homes = y.includes("h"); S.trains = y.includes("t"); S.all = y.includes("s"); }
   S.step = n("p", [...h.keys()].length ? 0 : 1, 0, 6); S.seed = h.get("g") || null; return [...h.keys()].length > 0;
 };
 let urlT = 0;
-A.hash = () => { const m = Math.floor(S.m), h = [["s", A.idOf(S.cx)], ["t", String(Math.floor(m / 60)).padStart(2, "0") + String(m % 60).padStart(2, "0")]]; if (S.lim !== 30) h.push(["n", S.lim]); if (S.ch !== 9) h.push(["c", S.ch]); if (S.view === "min") h.push(["v", "min"]); if (S.dest >= 0) h.push(["d", A.idOf(S.dest)]); if (S.theme !== "auto") h.push(["l", S.theme]); if (S.step) h.push(["p", S.step]); if (S.game) h.push(["g", S.game.seed]); return "#" + h.map(x => x.join("=")).join("&"); };
+A.hash = () => { const m = Math.floor(S.m), h = [["s", A.idOf(S.cx)], ["t", String(Math.floor(m / 60)).padStart(2, "0") + String(m % 60).padStart(2, "0")]]; if (S.lim !== 30) h.push(["n", S.lim]); if (S.ch !== 9) h.push(["c", S.ch]); if (S.view === "min") h.push(["v", "min"]); if (S.dest >= 0) h.push(["d", A.idOf(S.dest)]); if (S.alt >= 0) h.push(["e", A.idOf(S.alt)]); if (S.theme !== "auto") h.push(["l", S.theme]); { const y = (S.homes ? "h" : "") + (S.trains ? "t" : "") + (S.all ? "s" : ""); if (y) h.push(["y", y]); } if (S.step) h.push(["p", S.step]); if (S.game) h.push(["g", S.game.seed]); return "#" + h.map(x => x.join("=")).join("&"); };
 A.saveURL = () => { clearTimeout(urlT); urlT = setTimeout(() => { try { history.replaceState(null, "", location.pathname + location.search + A.hash()); } catch { } }, 250); };
 
 // ---------- answer
@@ -74,11 +76,17 @@ export function solve() {
     cache.key = key;
     if (S.ch > 4) { E.reach(net, R, S.cx, m * 60, lim); A.arr = R.arr; A.hops = R.hops; }
     else { const Q = A.QC ??= E.newRounds(net, 3), q = { ...Q, K: S.ch + 1 }; E.reachRounds(net, q, S.cx, m * 60, lim, true); Q.gen = q.gen; A.arr = Q.arr[S.ch]; A.hops = Q.hops; }
-    A.homes = E.litHomes(net, HM, { arr: A.arr }, S.lim * 60);
-    if (G) { G.uploadHops(A.hops); G.uploadLit(HM.lit); }
+    A.raw = A.hops; A.hops = null; A.homes = E.litHomes(net, HM, { arr: A.arr }, S.lim * 60); if (G) G.uploadLit(HM.lit);
     warpDirty = true; dirty = true;
   } else if (cache.lim !== S.lim) { A.homes = E.litHomes(net, HM, { arr: A.arr }, S.lim * 60); dirty = true; }
-  cache.lim = S.lim; A.count = A.countOf(A.arr, S.lim * 60);
+  { const gk = A.ghostAt == null || S.follow ? "" : [S.cx, S.lim, A.ghostAt].join(); if (gk !== A.ghostKey) { A.ghostKey = gk; if (gk) { E.reach(net, Rt, S.cx, A.ghostAt * 60, S.lim * 60, { countOnly: true }); A.ghost = Float32Array.from(Rt.arr); } else A.ghost = null; } }
+  if (!A.hops || A.hopsLim !== S.lim) tidy(m); cache.lim = S.lim; A.count = A.countOf(A.arr, S.lim * 60);
+}
+const hopsT = new Float32Array(net.nH * 4);
+function tidy(m) {
+  const lim = S.lim * 60, h = hopsT, C = net.C, r = A.raw, a = A.arr; for (let i = 0; i < h.length; i += 2) { if (r[i + 1] <= lim) { h[i] = r[i]; h[i + 1] = r[i + 1]; } else h[i] = h[i + 1] = E.INF; }
+  if (S.ch > 4) { let k = net.first[m], add = 0; for (let g = 0; g < C.n; g++, k++) { if (k >= C.n) { k = 0; add += 86400; } if (C.dep[k] + add - m * 60 > lim) break; const f = C.from[k], t = C.to[k]; if (a[f] > lim || a[t] > lim) continue; const q = (C.hop[k] >> 1) * 4, o = q + (C.hop[k] & 1) * 2; if (h[q + 1] > lim && h[q + 3] > lim) { h[o] = Math.min(a[f], a[t]); h[o + 1] = Math.max(a[f], a[t]); } } }
+  A.hops = h; A.hopsLim = S.lim; if (G) G.uploadHops(h); dirty = true;
 }
 A.countOf = (arr, lim) => { let n = 0; for (const [, mem] of D.complexes) for (const s of mem) if (arr[s] <= lim) { n++; break; } return n; };
 A.arrCx = (k, arr = A.arr) => { let b = E.INF; for (const s of D.complexes[k][1]) if (arr[s] < b) b = arr[s]; return b; };
@@ -93,30 +101,30 @@ function dayWork(ms) {
 A.dayAll = () => { while (day.i < 1440 || day.key !== [S.cx, S.lim, S.ch].join()) dayWork(50); return day.v; };
 
 // ---------- camera
-const YAW = -0.42;
-const cam = A.cam = { x: 0, y: 2500, mpp: 46, yaw: 0, pitch: .62, ox: 0, oy: 0 }, goal = { ...cam };
+const YAW = -0.506;                                               // Manhattan’s avenues run up the page (north is 29 degrees to the right)
+const cam = A.cam = { x: 0, y: 2500, mpp: 46, yaw: YAW, pitch: 0, ox: 0, oy: 0 }, goal = { ...cam };
 let W = innerWidth, H = innerHeight, dpr = 1; A.warp = 0; let warpGoal = 0, F = 1, dirty = true, stripDirty = true, warpDirty = true;
 A.poke = () => { dirty = true; }; A.pokeStrip = () => { stripDirty = dirty = true; };
 export const free = A.free = () => {                              // the part of the window the map may use
   const r = e => e.getBoundingClientRect(); const dock = r($("#dock")); const side = $("#side"), sr = r(side), has = side.childElementCount && sr.height > 4;
   if (A.phone()) return [0, Math.max(54, r($("header")).bottom), W, has ? Math.min(sr.top, dock.top) : dock.top];
-  return [Math.min(460, W * .4), 0, W, dock.top + 26];
+  return [S.step === 6 && W > 1150 ? 600 : Math.min(460, W * .4), 0, W, dock.top + 26];
 };
-let boxKey = "", box = null;
-function reachBox(yaw) {                                          // everything within reach at 8:30 a.m. and the start itself, in camera axes: centre and half sizes
-  const k = [S.cx, S.lim, yaw, A.phone()].join(); if (k === boxKey) return box; boxKey = k; E.reach(net, Rt, S.cx, 510 * 60, S.lim * 60, { countOnly: true }); const c = Math.cos(yaw), s = Math.sin(yaw); let a, b, d, e; const xs = [], ys = [];
-  for (let i = 0; i < net.nS; i++) if (Rt.arr[i] <= S.lim * 60) { xs.push(XY[2 * i] * c + XY[2 * i + 1] * s); ys.push(-XY[2 * i] * s + XY[2 * i + 1] * c); }
-  xs.sort((p, q) => p - q); ys.sort((p, q) => p - q); const ph = A.phone(), n = xs.length - 1, lo = Math.round(n * (ph ? .06 : .01)), hi = Math.round(n * (ph ? .9 : .97)); a = xs[lo]; b = xs[hi]; d = ys[Math.round(n * .03)]; e = ys[Math.round(n * .97)]; { const X = cxXY[2 * S.cx] * c + cxXY[2 * S.cx + 1] * s, Y = -cxXY[2 * S.cx] * s + cxXY[2 * S.cx + 1] * c; a = Math.min(a, X); b = Math.max(b, X); d = Math.min(d, Y); e = Math.max(e, Y); }
-  const mx = (a + b) / 2, my = (d + e) / 2; return box = [mx * c - my * s, mx * s + my * c, Math.max(2600, (b - a) / 2), Math.max(2600, (e - d) / 2)];
+function reachBox(yaw) {                                          // what can be reached now (and by day too, in the chapter that compares): centre and half sizes in camera axes, the walk included
+  const c = Math.cos(yaw), s = Math.sin(yaw), lim = S.lim * 60, cmp = !!A.ghost; let a = 1e9, b = -1e9, d = 1e9, e = -1e9; const add = (x, y, r) => { const X = x * c + y * s, Y = -x * s + y * c; a = Math.min(a, X - r); b = Math.max(b, X + r); d = Math.min(d, Y - r); e = Math.max(e, Y + r); };
+  for (let i = 0; i < net.nS; i++) { if (A.arr[i] <= lim) add(XY[2 * i], XY[2 * i + 1], 420); if (cmp && A.ghost[i] <= lim) add(XY[2 * i], XY[2 * i + 1], 420); }
+  add(cxXY[2 * S.cx], cxXY[2 * S.cx + 1], 1300); if (S.step === 1 && A.ui?.PLACES) for (const [k] of A.ui.PLACES) add(cxXY[2 * k], cxXY[2 * k + 1], 1500); const mx = (a + b) / 2, my = (d + e) / 2; return [mx * c - my * s, mx * s + my * c, (b - a) / 2, (e - d) / 2];
 }
+function routeBox(yaw) { const c = Math.cos(yaw), s = Math.sin(yaw), ks = [S.cx, ...S.focus]; let a = 1e9, b = -1e9, d = 1e9, e = -1e9; const add = (x, y) => { const X = x * c + y * s, Y = -x * s + y * c; a = Math.min(a, X); b = Math.max(b, X); d = Math.min(d, Y); e = Math.max(e, Y); }; for (const k of ks) add(cxXY[2 * k], cxXY[2 * k + 1]); if (G) for (const l of [...(A.legs || []), ...(A.legs2 || [])]) A.legPts(l, q => add(q[0], q[1])); const mx = (a + b) / 2, my = (d + e) / 2; return [mx * c - my * s, mx * s + my * c, Math.max(1900, (b - a) / 2 + 500), Math.max(1900, (e - d) / 2 + 500)]; }
 A.reachBox = yaw => reachBox(yaw);
 function frameFor() {                                             // where the camera wants to be for the current view
   const [x0, y0, x1, y1] = free(), w = Math.max(120, x1 - x0), h = Math.max(120, y1 - y0), o = { ox: (x0 + x1) / 2 - W / 2, oy: (y0 + y1) / 2 - H / 2 };
   if (S.view === "min") { const r = 60 * MIN; return { ...o, x: cxXY[2 * S.cx], y: cxXY[2 * S.cx + 1], mpp: r / (Math.min(w, h) * .5 * (A.phone() ? 1.6 : 1.12)), yaw: 0, pitch: 0 }; }
-  const yaw = A.phone() ? YAW : YAW * .55, b = reachBox(yaw), pitch = .66, mpp = Math.max(13, Math.min(80, (b[2] + 1300) * 2 / w, (b[3] + 1300) * 2 * Math.cos(pitch) / (h * .94))), need = Math.max((b[2] + 900) * 2 / w, (b[3] + 900) * 2 * Math.cos(pitch) / (h * .84));
-  return { ...o, x: b[0], y: b[1] - need * h * .035, mpp: Math.max(13, Math.min(72, need)), yaw, pitch };
+  const b = S.route && S.focus?.length ? routeBox(YAW) : S.hide || S.pick ? [cxXY[2 * S.cx] * .75, cxXY[2 * S.cx + 1] * .75, 10500, 10500] : reachBox(YAW), pitch = S.homes ? .62 : 0, ph = A.phone(), mx = ph ? 26 : 64, my = ph ? 30 : 46, need = Math.max((b[2] * 2) / Math.max(80, w - 2 * mx), (b[3] * 2) * Math.cos(pitch * .9) / Math.max(80, h - 2 * my));
+  return { ...o, x: b[0], y: b[1], mpp: Math.max(9, Math.min(85, need)), yaw: YAW, pitch };
 }
 A.recentre = (instant) => { Object.assign(goal, frameFor()); A.moved = false; if (instant) Object.assign(cam, goal); dirty = true; A.ui?.tools(); };
+A.refit = () => { if (A.moved || S.follow || S.game || S.view === 'min' || drag.strip || S.playing) return; solve(); const f = frameFor(); Object.assign(goal, f); dirty = true; };
 A.look = o => { Object.assign(goal, o); dirty = true; };
 const clampCam = () => { goal.mpp = Math.max(2.5, Math.min(120, goal.mpp)); goal.x = Math.max(-26000, Math.min(24000, goal.x)); goal.y = Math.max(-30000, Math.min(26000, goal.y)); };
 function resize() {
@@ -142,8 +150,10 @@ function warpStep(dt) {
   for (let h = 0; h < net.nH; h++) { const a = hopEnds[2 * h], b = hopEnds[2 * h + 1]; wtex[4 * h] = wp[2 * a]; wtex[4 * h + 1] = wp[2 * a + 1]; wtex[4 * h + 2] = wp[2 * b]; wtex[4 * h + 3] = wp[2 * b + 1]; }
   if (G) G.uploadWarp(wtex); return mv;
 }
-export const stopPos = A.stopPos = (s, out = []) => { const w = A.warp; if (w <= 0 || wp[2 * s] > 9e6) { out[0] = XY[2 * s]; out[1] = XY[2 * s + 1]; out[2] = w > .5 && wp[2 * s] > 9e6; return out; } out[0] = XY[2 * s] + (wp[2 * s] - XY[2 * s]) * w; out[1] = XY[2 * s + 1] + (wp[2 * s + 1] - XY[2 * s + 1]) * w; out[2] = false; return out; };
-export const cxPos = A.cxPos = k => { const w = A.warp, s = D.complexes[k][1][0]; if (w <= 0) return [cxXY[2 * k], cxXY[2 * k + 1], false]; if (k === S.cx) return [cxXY[2 * k], cxXY[2 * k + 1], false]; if (wp[2 * s] > 9e6) return [cxXY[2 * k], cxXY[2 * k + 1], w > .5]; return [cxXY[2 * k] + (wp[2 * s] - cxXY[2 * k]) * w, cxXY[2 * k + 1] + (wp[2 * s + 1] - cxXY[2 * k + 1]) * w, false]; };
+const stopOff = new Float32Array(net.nS * 2), cxOff = new Float32Array(nC * 2);
+{ const n = new Float32Array(net.nS); for (let h = 0; h < net.nH; h++) for (const [i, s] of [[D.hopOff[h], hopEnds[2 * h]], [D.hopOff[h + 1] - 1, hopEnds[2 * h + 1]]]) { stopOff[2 * s] += D.hopOx[2 * i] / 40; stopOff[2 * s + 1] += D.hopOx[2 * i + 1] / 40; n[s]++; } for (let s = 0; s < net.nS; s++) if (n[s]) { stopOff[2 * s] /= n[s]; stopOff[2 * s + 1] /= n[s]; } for (let k = 0; k < nC; k++) { const m = D.complexes[k][1]; for (const s of m) { cxOff[2 * k] += stopOff[2 * s] / m.length; cxOff[2 * k + 1] += stopOff[2 * s + 1] / m.length; } } }
+export const stopPos = A.stopPos = (s, out = []) => { const w = A.warp; if (w <= 0 || wp[2 * s] > 9e6) { const q = (G?.cam.slot || 0) * (1 - w); out[0] = XY[2 * s] + stopOff[2 * s] * q; out[1] = XY[2 * s + 1] + stopOff[2 * s + 1] * q; out[2] = w > .5 && wp[2 * s] > 9e6; return out; } out[0] = XY[2 * s] + (wp[2 * s] - XY[2 * s]) * w; out[1] = XY[2 * s + 1] + (wp[2 * s + 1] - XY[2 * s + 1]) * w; out[2] = false; return out; };
+export const cxPos = A.cxPos = k => { const w = A.warp, s = D.complexes[k][1][0]; if (w <= 0) { const q = G?.cam.slot || 0; return [cxXY[2 * k] + cxOff[2 * k] * q, cxXY[2 * k + 1] + cxOff[2 * k + 1] * q, false]; } if (k === S.cx) return [cxXY[2 * k], cxXY[2 * k + 1], false]; if (wp[2 * s] > 9e6) return [cxXY[2 * k], cxXY[2 * k + 1], w > .5]; return [cxXY[2 * k] + (wp[2 * s] - cxXY[2 * k]) * w, cxXY[2 * k + 1] + (wp[2 * s + 1] - cxXY[2 * k + 1]) * w, false]; };
 // where a train is drawn
 const _p = [0, 0, 0, 0], _q = [0, 0, 0, 0], _o = {};
 function trainSeg(i, x, push, len, alpha, width, side = 0, colour = null) {
@@ -166,24 +176,28 @@ let reachA = 1;
 A.palette = () => { const m = S.theme === "light" ? 720 : S.theme === "dark" ? 180 : ((S.m % 1440) + 1440) % 1440, L = sky.light(m), K = sky.dark(m); return [sky.mixPal(L, K, F), sky.isDark(m) ? K : L, sky.isDark(m)]; };
 let lastCss = "";
 function paint(pal) { const [bg, ink, shore] = [sky.css(pal.bg), sky.css(pal.ink), sky.css(sky.mixPal({ a: pal.ink }, { a: pal.bg }, .34).a)]; const k = bg + ink; if (k === lastCss) return; lastCss = k; const st = document.documentElement.style; st.setProperty("--bg", bg); st.setProperty("--ink", ink); st.setProperty("--soft", shore); st.setProperty("--rule", bg.replace("rgb", "rgba").replace(")", ",0)")); document.querySelector("meta[name=theme-color]").content = bg; st.colorScheme = A.isDark ? "dark" : "light"; stripDirty = true; }
+let pickA = S.step === 1 ? 1 : 0, notch = 0, layA = 0, homesA = 0, trainA = 0, moveA = 0, hoverMap = false; const EMPTY = new Set();
 const _s = [], INKC = [25, 27, 38];
 function drawGL() {
-  const lim = S.lim * 60; GS.lim = lim; GS.reveal = reveal; GS.night = F; GS.warp = A.warp; GS.reachA = reachA; GS.ride = !!S.follow && !S.follow.race;
-  // dots
-  const ds = A.phone() ? .8 : .92, dz = Math.max(.75, Math.min(1.5, 46 / cam.mpp)), shown = Math.min(lim, reveal);
+  const lim = S.lim * 60; GS.lim = lim; GS.reveal = reveal; GS.night = F; GS.warp = A.warp; GS.reachA = reachA; GS.ride = !!S.follow && !S.follow.race; GS.reachA = reachA * (1 - .72 * trainA);
+  // dots: the named ones; every reached one as a small notch in its line when you look closer, choose a start, or ask for them
+  const dz = Math.max(.8, Math.min(1.35, 30 / cam.mpp)), shown = Math.min(lim, reveal), named = A.named || EMPTY, nt = notch * (S.hide ? 0 : 1);
   for (let s = 0; s < net.nS; s++) {
-    const p = stopPos(s, _s), j = 4 * s, a = A.arr[s], on = a <= shown && reachA > .4; G.dotA[j] = p[0]; G.dotA[j + 1] = p[1];
-    const hid = p[2]; G.dotA[j + 2] = hid ? 0 : net.cof[s] === S.cx ? (S.follow ? 4 : 0) : net.cof[s] === S.dest ? 6.5 : on ? (2.35 * dz + .35) * ds : 1.2 * dz; G.dotA[j + 3] = on || net.cof[s] === S.dest ? 1 : 0;
+    const p = stopPos(s, _s), j = 4 * s, a = A.arr[s], k = net.cof[s], on = a <= shown && reachA > .4; G.dotA[j] = p[0]; G.dotA[j + 1] = p[1];
+    if ((named.has(k) || S.route && (k === S.dest || k === S.alt)) && D.complexes[k][1][0] === s) { const q = cxPos(k); G.dotA[j] = q[0]; G.dotA[j + 1] = q[1]; }
+    let r = 0, kind = 1; if (p[2]) r = 0; else if (S.route && (k === S.dest || k === S.alt)) r = D.complexes[k][1][0] === s ? 6 : 0; else if (k === S.cx) r = 0; else if (named.has(k)) r = D.complexes[k][1][0] === s ? 3.6 : 0; else if (on && nt > .02) r = 1.5 * dz * nt; else if (layA > .02 || S.hide) { r = (S.pick ? 2 : 1.4) * dz * (S.hide ? 1 : layA); kind = 0; } else if (S.follow && !S.follow.race) { r = 1.6; kind = on ? 1 : 0; }
+    G.dotA[j + 2] = r; G.dotA[j + 3] = kind;
   }
-  let n = 0; if (A.warp < .7) for (let s = 0; s < net.nS; s++) { const a = A.arr[s]; if (a <= shown) { const j = 3 * n++; G.discA[j] = XY[2 * s]; G.discA[j + 1] = XY[2 * s + 1]; G.discA[j + 2] = Math.min(E.WALK_R, (lim - a) * E.WALK); } } GS.discN = n;
+  let n = 0; if (A.warp > .5) { G.discA[0] = cxXY[2 * S.cx]; G.discA[1] = cxXY[2 * S.cx + 1]; G.discA[2] = S.lim * MIN; n = 1; } else if (reachA > .02) if (!S.pick) for (let s = 0; s < net.nS; s++) { const a = A.arr[s]; if (a <= shown) { const j = 3 * n++; G.discA[j] = XY[2 * s]; G.discA[j + 1] = XY[2 * s + 1]; G.discA[j + 2] = Math.max(300, Math.min(E.WALK_R, (lim - a) * E.WALK)); } } GS.discN = n;
+  n = 0; if (A.ghost && G.ghostA) for (let s = 0; s < net.nS; s++) { const a = A.ghost[s]; if (a <= lim) { const j = 3 * n++; G.ghostA[j] = XY[2 * s]; G.ghostA[j + 1] = XY[2 * s + 1]; G.ghostA[j + 2] = Math.max(300, Math.min(E.WALK_R, (lim - a) * E.WALK)); } } GS.ghostN = n; GS.ghostK = A.ghost ? 1 : 0; GS.homesA = homesA; GS.pickA = pickA; GS.allA = Math.max(trainA, S.hide ? 1 : 0);
   // trains
   G.trP.reset(); const sec = S.m * 60, len = Math.max(170, 5 * cam.mpp); let only = S.follow?.race;
   const INKP = F > .5 ? [244, 236, 219] : INKC;
   if (only) for (const r of only.trips) trainSeg(r.trip, A.raceX(r, sec), G.trP, len * 1.6, 1, 1.35, r.side, INKP);
-  else if (A.warp < .6 && !A.noTrains) E.eachTrain(net, sec % 86400, (i, x) => { const f = S.follow && S.follow.trip === i; trainSeg(i, x, G.trP, f ? len * 1.4 : len, (S.hide ? .5 : 1) * (1 - A.warp / .6), f ? 1.6 : 1, 0, f ? INKP : null); });
+  else if (A.warp < .6 && !A.noTrains && (trainA > .02 || moveA > .02 || S.follow)) { const mine = new Set(A.cxRoutes[S.cx]); E.eachTrain(net, sec % 86400, (i, x) => { const f = S.follow && S.follow.trip === i, al = f ? 1 : S.follow ? .5 : S.hide ? 0 : Math.max(trainA, mine.has(D.patRoute[D.tripPat[i]]) ? moveA * .9 : 0); if (al > .02) trainSeg(i, x, G.trP, f ? len * 1.4 : len, al * (1 - A.warp / .6), f ? 1.6 : 1, 0, f ? INKP : null); }); }
   GS.trainN = G.trP.n;
   // the way to the chosen station
-  G.rtP.reset(); const legs = S.follow?.race ? S.follow.race.legs : S.tool === "to" || S.dest >= 0 ? A.legs : null;
+  G.rtP.reset(); const legs = S.follow?.race ? S.follow.race.legs : S.route ? (A.legs2 ? [...(A.legs || []), ...A.legs2] : A.legs) : null;
   if (legs) for (const pass of [0, 1]) for (const l of legs) A.legPts(l, (a, b, c) => { const x = b[0] - a[0], y = b[1] - a[1], L = Math.hypot(x, y) || 1, k = l.side || 0, u = y / L * k, v = -x / L * k, w = l.w || 1; if (!pass) c = INKP; G.rtP.push(a[0], a[1], b[0], b[1], (a[2] + u) * 40, (a[3] + v) * 40, (b[2] + u) * 40, (b[3] + v) * 40, c[0], c[1], c[2], 255, pass ? w : w * 1.45, 1, 0); }); GS.routeN = G.rtP.n;
   G.setCam(cam); const [pal] = A.palette(); GS.pal = pal; G.frame(GS);
 }
@@ -198,39 +212,45 @@ A.legStops = l => {                                               // where a leg
 // labels
 const oc = $("#over").getContext("2d");
 const GEO = [["man", -1500, 5900, 11, 1], ["bk", 1500, -9200, 15, 0], ["qn", 12500, 1500, 15, 0], ["bx", 8200, 13200, 14, 0], ["si", -16500, -15500, 14, 0], ["nj", -13500, 2500, 14, 0], ["hud", -5900, 5200, 14, 2], ["bay", -7300, -8300, 14, 2], ["jam", 9500, -13300, 13, 2], ["sea", 4500, -20500, 15, 2], ["lb", -5500, -19000, 14, 2], ["snd", 15500, 11000, 13, 2]];
-const pref = [...Array(nC).keys()].sort((a, b) => A.weight[b] - A.weight[a]);
 const FONT = () => A.lang === "zh" ? `OST,"OSTZ","Songti SC",serif` : `OST,Georgia,serif`;
+const LB = A.labels = makeLabels(A); let placed = [], placeT = 0;
+A.hopEndsPx = h => { const a = hopEnds[2 * h], b = hopEnds[2 * h + 1]; if (wp[2 * a] > 9e6 || wp[2 * b] > 9e6) return null; const p = G.project(wp[2 * a], wp[2 * a + 1]), q = G.project(wp[2 * b], wp[2 * b + 1]); return [p[0], p[1], q[0], q[1]]; };
+A.mapRect = () => { const [x0, y0, x1, y1] = free(), ph = A.phone(), nav = document.querySelector("nav").getBoundingClientRect(); return [x0 + (ph ? 6 : 10), Math.max(y0 + 6, ph ? 0 : nav.bottom - 4), x1 - (ph ? 6 : 14), y1 - (ph ? 8 : 34)]; };
+let pKey = "", pSize = null; const shortTag = () => S.step > 0 && S.step < 6 ? A.t().home1 : A.t().you;
+const plateSize = () => { const y = $("#you"); if (y.hidden) return null; const k = [S.cx, A.lang, A.phone(), shortTag()].join(); if (k !== pKey) { y.innerHTML = shortTag(); const w2 = y.offsetWidth; y.innerHTML = A.tag(S.cx); y.dataset.s = "0"; if (y.offsetWidth) pKey = k; pSize = [y.offsetWidth, y.offsetHeight, w2]; } return pSize; };
 function drawOver() {
-  const g = oc, z = A.t(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H); if (!G) return;
-  const [, pal] = A.palette(), ink = sky.css(pal.ink), [x0, y0, x1, y1] = free(), phone = A.phone(), taken = [];
-  for (const id of ["#ask", "#ans", "#side > *", "nav", "#you", "#dock"]) document.querySelectorAll(id).forEach(e => { const r = e.getBoundingClientRect(); if (r.width && !e.hidden) taken.push([r.left - 6, r.top - 4, r.right + 6, r.bottom + 4]); });
-  const hits = b => taken.some(t => b[0] < t[2] && b[2] > t[0] && b[1] < t[3] && b[3] > t[1]);
-  const w = A.warp;
+  const g = oc, z = A.t(); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H); A.named = EMPTY; if (!G) return;
+  const [, pal] = A.palette(), ink = sky.css(pal.ink), phone = A.phone(), view = A.mapRect(), [x0, y0, x1, y1] = view, w = A.warp, lim = Math.min(S.lim * 60, reveal), rings = [];
   if (w > .02) {                                                  // rings of 10 minutes
-    const c = G.project(cxXY[2 * S.cx], cxXY[2 * S.cx + 1]); g.save(); g.globalAlpha = w; const gr = g.createLinearGradient(x0 - 40, 0, x0 + 160, 0); gr.addColorStop(0, ink.replace('rgb', 'rgba').replace(')', ',0)')); gr.addColorStop(1, ink); g.strokeStyle = phone ? ink : gr; g.fillStyle = ink; g.lineWidth = 1;
-    for (let k = 10; k <= 120; k += 10) { const r = k * MIN / cam.mpp; if (r > Math.hypot(W, H)) break; g.globalAlpha = w * (k === S.lim ? .95 : k % 30 ? .17 : .34); g.lineWidth = k === S.lim ? 1.4 : 1; g.beginPath(); g.arc(c[0], c[1], r, 0, 7); g.stroke(); }
-    g.font = `15px ${FONT()}`; g.textAlign = "center"; g.lineJoin = "round"; g.strokeStyle = sky.css(pal.bg); g.lineWidth = 6;
-    for (const k of [10, 20, 30, 40, 60, 90]) { const r = k * MIN / cam.mpp, x = c[0] + r * Math.sin(.0), y = c[1] + r; if (y > y1 - 4 || y < y0 + 12) continue; const tx = z.ring(k), tw = g.measureText(tx).width, b = [x - tw / 2 - 3, y - 9, x + tw / 2 + 3, y + 9]; if (hits(b)) continue; taken.push(b); g.globalAlpha = w; g.strokeText(tx, x, y + 5); g.fillText(tx, x, y + 5); }
+    const c = G.project(cxXY[2 * S.cx], cxXY[2 * S.cx + 1]); g.save(); const gr = g.createLinearGradient(x0 - 40, 0, x0 + 160, 0); gr.addColorStop(0, ink.replace('rgb', 'rgba').replace(')', ',0)')); gr.addColorStop(1, ink); g.strokeStyle = phone ? ink : gr;         for (let k = 10; k <= 120; k += 10) { const r = k * MIN / cam.mpp; if (r > Math.hypot(W, H)) break; g.globalAlpha = w * (k === S.lim ? .95 : .16); g.lineWidth = k === S.lim ? 1.3 : 1; g.beginPath(); g.arc(c[0], c[1], r, 0, 7); g.stroke(); }
+    g.font = `15px ${FONT()}`; g.textAlign = "center"; g.lineJoin = "round"; g.fillStyle = ink; g.strokeStyle = sky.css(pal.bg); g.lineWidth = 6;
+    const seg = LB.lines([x0, y0, x1, y1]); for (const k of [10, 30, 60]) { const r = k * MIN / cam.mpp, tx = z.ring(k), tw = g.measureText(tx).width; if (r < 30) continue; let bb = null, bh = 1e9; for (let i = 0; i < 24; i++) { const an = Math.PI / 2 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * Math.PI / 12, x = c[0] + r * Math.cos(an), yy = c[1] + r * Math.sin(an), q = [x - tw / 2 - 4, yy - 10, x + tw / 2 + 4, yy + 10]; if (q[0] < x0 || q[2] > x1 || q[1] < y0 || q[3] > y1 || rings.some(t => q[0] < t[2] && q[2] > t[0] && q[1] < t[3] && q[3] > t[1])) continue; let n = 0; for (let j = 0; j < seg.length; j += 4) { const mx = (seg[j] + seg[j + 2]) / 2, my = (seg[j + 1] + seg[j + 3]) / 2, hw = Math.abs(seg[j] - seg[j + 2]) / 2, hh = Math.abs(seg[j + 1] - seg[j + 3]) / 2; if (Math.abs(mx - x) < tw / 2 + 6 + hw && Math.abs(my - yy) < 12 + hh) n++; } if (n < bh) { bh = n; bb = [q, x, yy]; } } if (!bb) continue; rings.push(bb[0]); g.globalAlpha = w; g.strokeText(tx, bb[1], bb[2] + 5); g.fillText(tx, bb[1], bb[2] + 5); }
     g.restore();
-  } else if (cam.mpp > 14) {
-    g.save(); g.fillStyle = ink; g.textAlign = "center";
-    for (const [k, x, y, sz, kind] of GEO) { const p = G.project(x, y); const tx = z.geo[k]; g.globalAlpha = (kind === 2 ? .62 : .4) * (1 - w * 4); if (g.globalAlpha < .05) continue; g.font = `${kind === 2 && A.lang === "en" ? "italic " : ""}${sz}px ${FONT()}`; if ("letterSpacing" in g) g.letterSpacing = kind === 2 ? "1px" : "4px"; const tw = g.measureText(tx).width, b = [p[0] - tw / 2, p[1] - 12, p[0] + tw / 2, p[1] + 4]; if (kind !== 1 && !hits(b) && b[0] > x0 - 20 && b[2] < x1 - 4 && b[1] > y0 && b[3] < y1) { g.fillText(tx, p[0], p[1]); taken.push(b); } }
-    if ("letterSpacing" in g) g.letterSpacing = "0px"; g.restore();
   }
-  // station names
-  g.save(); g.lineJoin = "round"; const fs = phone ? 13 : 14.5; const lim = Math.min(S.lim * 60, reveal); let left = phone ? 11 : 24; if (cam.mpp < 15) left *= 1.6; if (cam.mpp < 9) left *= 2;
-  const bgc = sky.css(w > .5 ? pal.bg : pal.land);
-  const label = (k, force, own) => {
-    const p0 = cxPos(k); if (p0[2]) return false; const p = G.project(p0[0], p0[1]); if (p[0] < x0 + 4 || p[0] > x1 - 4 || p[1] < y0 + 8 || p[1] > y1 - 6) return false;
-    const tx = own || A.cxName[k]; g.font = `${force ? "bold " : ""}${fs + (force ? 2 : 0)}px ${FONT()}`; const tw = g.measureText(tx).width; const gap = S.follow?.race ? 46 : 8; for (const [dx, al] of S.follow?.race ? [[gap, 0]] : [[gap, 0], [-gap - tw, 0]]) { const b = [p[0] + dx - 3, p[1] - 10, p[0] + dx + tw + 3, p[1] + 9]; if (b[2] > W - 4 || b[0] < x0 || (hits(b) && !force)) continue; taken.push(b); g.globalAlpha = 1; g.strokeStyle = bgc; g.lineWidth = 4.5; g.strokeText(tx, p[0] + dx, p[1] + 5); g.fillStyle = ink; g.fillText(tx, p[0] + dx, p[1] + 5); return true; } return false;
-  };
-  const you = G.project(...cxPos(S.cx)); if (!S.follow) taken.push([you[0] - 14, you[1] - 34, you[0] + 14, you[1] + 8]);
-  if (S.dest >= 0) label(S.dest, true);
-  if (S.follow?.names) { for (const [k, n] of S.follow.names) label(k, false, n); }
-  else if (!S.follow || S.follow.race) { for (const k of pref) { if (left <= 0) break; if (k === S.cx || k === S.dest || S.hide && !A.showAllNames) { if (S.hide && left > 0 && k !== S.cx && label(k)) left--; continue; } if (A.arrCx(k) <= lim && label(k)) left--; } }
+  for (const id of ["#layers", "#recentre"]) { const e = document.querySelector(id); if (e && !e.hidden) { const r = e.getBoundingClientRect(); if (r.width) rings.push([r.left - 2, r.top + 6, r.right + 2, r.bottom - 6]); } }
+  // the start plate and the names
+  const y = $("#you"), you = G.project(...cxPos(S.cx)), still = !S.follow; if (y.dataset.k !== S.cx + "" || y.dataset.l !== A.lang) { y.dataset.k = S.cx; y.dataset.l = A.lang; y.dataset.s = "0"; pKey = ""; y.innerHTML = A.tag(S.cx); }
+  const inWin = you[0] > x0 - 30 && you[0] < W + 30 && you[1] > y0 - 60 && you[1] < y1 + 60; y.hidden = !(still && inWin && reveal > 0) || S.pick;
+  const fs = phone ? 14 : 15; g.save(); g.lineJoin = "round";
+  const halo = (tx, x, yy, col, lw = 4) => { g.strokeStyle = col; g.lineWidth = lw; g.strokeText(tx, x, yy); g.fillStyle = ink; g.fillText(tx, x, yy); };
+  if (still) {
+    const pl = S.step === 1 && !S.pick && A.ui ? A.ui.places() : null, must = pl ? pl.all.map(x => x.k) : S.focus || []; const r0 = phone ? 6 : 9, zoom = S.view === "map" ? Math.max(1, frameFor().mpp / cam.mpp) : 1, n = Math.round((S.hide ? r0 + 4 : r0) * (zoom > 1.5 ? Math.min(2.6, zoom) : 1)), moving = drag.strip || S.playing || !!A.ui?.L?.anim, quiet = !!S.route;
+    placed = LB.place(g, { view, n: reveal < 1e8 && !quiet ? Math.min(n, 99) : n, lim, font: `${fs}px ${FONT()}`, lh: fs + 3, plate: plateSize(), boxes: rings, space: S.hide ? (phone ? 62 : 84) : phone ? 56 : 74, must, only: quiet || !!pl, names: pl ? new Map(pl.all.map(x => [x.k, x.name])) : null, soft: !!pl && phone, all: S.hide || S.pick, frozen: moving || reveal < 1e8 });
+    A.placed = placed; A.named = pl ? EMPTY : new Set(placed.filter(p => !p.plate).map(p => p.k)); if (pl) for (const x of pl.all) { if (x.k === S.cx) continue; const q = G.project(...cxPos(x.k)); if (q[0] < x0 || q[0] > x1 || q[1] < y0 || q[1] > y1) continue; const ok = x.a <= lim; g.globalAlpha = 1; g.beginPath(); g.arc(q[0], q[1], ok ? 5.2 : 4.6, 0, 7); g.fillStyle = ok ? ink : sky.css(pal.land); g.fill(); g.lineWidth = 1.5; g.strokeStyle = ok ? sky.css(pal.bg) : ink; g.stroke(); } const bgc = sky.css(w > .5 ? pal.bg : pal.land);
+    g.font = `${fs}px ${FONT()}`; g.textAlign = "left";
+    for (const p of placed) { if (p.lead) { g.globalAlpha = p.plate ? 1 : .6; g.strokeStyle = ink; g.lineWidth = p.plate ? 1.3 : .9; g.beginPath(); g.moveTo(p.lead[0], p.lead[1]); g.lineTo(p.lead[2], p.lead[3]); g.stroke(); g.globalAlpha = 1; } if (p.plate) { if (y.dataset.s !== (p.short ? shortTag() : "0")) { y.dataset.s = p.short ? shortTag() : "0"; y.innerHTML = p.short ? shortTag() : A.tag(S.cx); } y.style.transform = `translate(${p.box[0].toFixed(1)}px,${p.box[1].toFixed(1)}px)`; A.plateBox = p.box; } else { g.font = `${p.k === S.dest ? "bold " : ""}${fs}px ${FONT()}`; if (pl) g.globalAlpha = A.arrCx(p.k) <= lim ? 1 : .68; halo(p.text, p.box[0], p.box[1] + fs - 1, bgc, 3); } }
+    if (!placed.some(p => p.plate) && !y.hidden) { const bw = y.offsetWidth, yx = Math.max(x0 + 2, Math.min(x1 - bw, you[0] - bw / 2)), yy = Math.max(y0, you[1] - 52); y.style.transform = `translate(${yx}px,${yy}px)`; A.plateBox = null; }
+    // you are here
+    if (!y.hidden) { g.globalAlpha = 1; g.beginPath(); g.arc(you[0], you[1], 7.5, 0, 7); g.fillStyle = sky.css(pal.bg); g.fill(); g.lineWidth = 2.4; g.strokeStyle = ink; g.stroke(); g.beginPath(); g.arc(you[0], you[1], 2.6, 0, 7); g.fillStyle = ink; g.fill(); }
+  } else {
+    placed = []; A.placed = []; const bgc = sky.css(pal.land), done = [], race = !!S.follow.race;
+    for (const [k, own] of S.follow.names || []) { const p0 = cxPos(k), p = G.project(p0[0], p0[1]); if (p[0] < x0 || p[0] > x1 || p[1] < y0 || p[1] > y1) continue; g.font = `${fs}px ${FONT()}`; const tw = g.measureText(own).width, dx = race ? 46 : 12, b = [p[0] + dx, p[1] - 10, p[0] + dx + tw, p[1] + 9]; if (b[2] > W - 4 || done.some(q => b[0] < q[2] && b[2] > q[0] && b[1] < q[3] && b[3] > q[1])) continue; done.push(b); halo(own, b[0], p[1] + 5, bgc, 4); }
+  }
   g.restore();
-  // marker
-  const y = $("#you"); if (S.follow && !S.follow.race) y.hidden = true; else { const off = you[0] < x0 - 40 || you[0] > W + 40 || you[1] < y0 - 10 || you[1] > y1 + 30; y.hidden = off || !!S.follow; const hw = (y.offsetWidth || 120) / 2, yx = Math.max(hw + 4, Math.min(W - hw - 4, you[0])); y.style.setProperty('--dx', (you[0] - yx).toFixed(1) + 'px'); y.style.transform = `translate(${yx.toFixed(1)}px,${you[1].toFixed(1)}px) translate(-50%,-100%) translateY(-22px)`; if (y.dataset.k !== S.cx + "") { y.dataset.k = S.cx; y.innerHTML = A.tag(S.cx); } }
+  // boroughs, faint, only where there is room
+  if (w < .05 && !S.follow && !S.route) { g.save(); g.fillStyle = ink; g.textAlign = "center"; for (const [k, X, Y, sz, kind] of GEO) { if (kind) continue; const tx = z.geo[k], p = G.project(X, Y); g.font = `${sz - 2}px ${FONT()}`; if ("letterSpacing" in g) g.letterSpacing = "4px"; const tw = g.measureText(tx).width, b = [p[0] - tw / 2 - 6, p[1] - 16, p[0] + tw / 2 + 6, p[1] + 8]; if (b[0] < x0 || b[2] > x1 || b[1] < y0 || b[3] > y1 || !LB.free(...b)) continue; g.globalAlpha = .34; g.fillText(tx, p[0], p[1]); LB.mark(...b); } g.restore(); }
+  // north
+  if (w < .5) { g.save(); const nx = x1 - (phone ? 14 : 12), ny = y1 - (phone ? 14 : 2), a = -cam.yaw; g.translate(nx, ny); g.globalAlpha = .75; g.strokeStyle = g.fillStyle = ink; g.lineWidth = 1; const vx = Math.sin(a), vy = -Math.cos(a); g.beginPath(); g.moveTo(-vx * 8, -vy * 8); g.lineTo(vx * 9, vy * 9); g.moveTo(vx * 9, vy * 9); g.lineTo(vx * 4 - vy * 3, vy * 4 + vx * 3); g.stroke(); g.font = `13px ${FONT()}`; g.textAlign = "center"; g.globalAlpha = 1; g.lineJoin = 'round'; g.strokeStyle = sky.css(pal.land); g.lineWidth = 5; g.strokeText('N', vx * 17, vy * 17 + 4); g.globalAlpha = .75; g.fillText("N", vx * 17, vy * 17 + 4); g.restore(); }
   A.ui?.over?.(g, ink, pal, FONT);
 }
 // ---------- the strip of the day
@@ -243,10 +263,10 @@ function drawStrip() {
   g.strokeStyle = ink; g.globalAlpha = .5; g.lineWidth = 1; g.strokeRect(-1, bot + .5, w + 2, 5);
   // one hairline per minute (per pixel column on small screens): its height is the number of stations
   g.globalAlpha = 1; const step = Math.max(1, Math.ceil(1440 / w * 2.2)), px = w / 1440 * step, lw = 1; let last = -1;
-  g.fillStyle = ink; if (!S.hide) for (let m = 0; m < 1440; m += step) { let lo = 1e9, hi = -1; for (let q = m; q < m + step && q < 1440; q++) if (v[q] >= 0) { lo = Math.min(lo, v[q]); hi = Math.max(hi, v[q]); } if (hi < 0) { if (last < 0) continue; lo = hi = last; } last = hi; const x = Math.round(X(m) + px / 2) + .5, Y = a => bot - a / mx * (bot - top); g.globalAlpha = .85; g.fillRect(x - .5, Y(lo), 1, bot - Y(lo)); if (hi > lo) { g.globalAlpha = .38; g.fillRect(x - .5, Y(hi), 1, Y(lo) - Y(hi)); } }
+  if (!S.hide) { const Y = a => bot - a / mx * (bot - top), col = []; for (let x = 0; x < w; x++) { let lo = 1e9, hi = -1; for (let q = Math.floor(x / w * 1440), e = Math.max(q + 1, Math.ceil((x + 1) / w * 1440)); q < e && q < 1440; q++) if (v[q] >= 0) { lo = Math.min(lo, v[q]); hi = Math.max(hi, v[q]); } if (hi < 0) { lo = hi = last; } else last = hi; col.push([lo, hi]); } g.fillStyle = ink; for (const [k, al] of [[1, .16], [0, .2]]) { g.globalAlpha = al; g.beginPath(); g.moveTo(0, bot); col.forEach((c2, x) => g.lineTo(x + .5, Y(Math.max(0, c2[k])))); g.lineTo(w, bot); g.fill(); } g.globalAlpha = .9; g.strokeStyle = ink; g.lineWidth = 1; g.beginPath(); col.forEach((c2, x) => x ? g.lineTo(x + .5, Y(Math.max(0, c2[1]))) : g.moveTo(.5, Y(Math.max(0, c2[1])))); g.stroke(); }
   g.font = `${w < 700 ? 14 : 15}px ${FONT()}`; g.globalAlpha = .85; g.textAlign = "left"; g.fillStyle = ink; if (!S.hide && top > 10) g.fillText(z.cap, w < 700 ? 18 : 48, 14);
   // cursor
-  g.globalAlpha = 1; g.fillStyle = ink; const cv = v[Math.floor(S.m) % 1440], cy = cv >= 0 && !S.hide ? bot - cv / mx * (bot - top) : top; g.fillRect(cur - .75, top - 6, 1.5, bot - top + 12); g.beginPath(); g.arc(cur, cy, 5.5, 0, 7); g.fillStyle = sky.css(pal.bg); g.fill(); g.lineWidth = 2; g.strokeStyle = ink; g.stroke(); g.beginPath(); g.arc(cur, cy, 2, 0, 7); g.fillStyle = ink; g.fill();
+  g.globalAlpha = 1; g.fillStyle = ink; const cv = v[Math.floor(S.m) % 1440], cy = cv >= 0 && !S.hide ? bot - cv / mx * (bot - top) : top; g.fillRect(cur - .75, top - 6, 1.5, bot - top + 12); g.beginPath(); g.arc(cur, cy, document.activeElement === c ? 8 : 5.5, 0, 7); g.fillStyle = sky.css(pal.bg); g.fill(); g.lineWidth = 2; g.strokeStyle = ink; g.stroke(); g.beginPath(); g.arc(cur, cy, 2, 0, 7); g.fillStyle = ink; g.fill();
   // hours
   g.font = `15px ${FONT()}`; g.textAlign = "center"; g.globalAlpha = .92; const lab = w < 700 ? z.hoursS : z.hours; for (const k in lab) g.fillText(lab[k], X(k * 60), h - 4); g.globalAlpha = .55; for (let k = 0; k <= 24; k++) g.fillRect(X(k * 60) - .5, bot + 5.5, 1, k % 3 ? 2 : 4);
   A.stripGeom = { X, bot, top, mx };
@@ -255,9 +275,9 @@ A.redrawStrip = drawStrip;
 // ---------- numbers
 let shownN = -1, lastMin = -1;
 export function numbers() {
-  const z = A.t(), m = Math.floor(S.m) % 1440; const key = [A.lang, m, A.count, S.lim, S.cx, S.hide, S.step, S.tool, S.ch, !!S.game, !!S.follow, S.playing, drag.strip].join(); if (key === shownN) return; shownN = key;
+  const z = A.t(), m = Math.floor(S.m) % 1440; const key = [A.lang, m, A.count, S.lim, S.cx, S.hide, S.pick, S.step, S.tool, S.ch, !!S.game, !!S.follow, S.playing, drag.strip].join(); if (key === shownN) return; shownN = key;
   $("#clock").innerHTML = z.clock(m); const st = $("#strip"); st.setAttribute("aria-valuenow", m); st.setAttribute("aria-valuetext", z.slider(z.time(m), A.count, A.cxName[S.cx]));
-  const p = A.homes / HM.total * 100, ptxt = p >= 9.95 ? Math.round(p) : p.toFixed(1); $("#ans").hidden = S.hide || S.step === 6; $("#ans b").textContent = A.count; $("#ans .u").textContent = z.ans(A.count); $("#ans .h").textContent = A.phone() ? z.homesShort(ptxt) : z.homes(ptxt);
+  const p = A.homes / HM.total * 100, ptxt = p >= 9.95 ? Math.round(p) : p.toFixed(1); $("#ans").hidden = S.hide || S.pick || S.step === 6; const pl = S.step === 1 && !S.pick && A.ui?.places ? A.ui.places() : null; $("#ans b").textContent = pl ? pl.n : A.count; $("#ans .u").textContent = pl ? z.ans1(pl.of) : z.ans(A.count); $("#ans .h").textContent = pl ? z.ans1b(A.count) : A.phone() ? z.homesShort(ptxt) : z.homes(ptxt);
   let bm = -1; if (S.step === 0 && !S.game && !S.follow && !S.tool && !S.playing && !drag.strip) { const base = A.count; let bv = Math.max(base * 1.15, base + 5); for (let q = 1; q <= 15; q++) { const c = A.countAt(S.cx, (m + q) % 1440); if (c > bv) { bv = c; bm = (m + q) % 1440; } } if (bm >= 0) { $("#ans .w").dataset.v = bm; $("#ans .w").textContent = z.again1(z.time(bm), bv); } } $("#ans .w").hidden = bm < 0;
 }
 A.numbers = () => { shownN = -1; numbers(); };
@@ -269,29 +289,30 @@ function frame(now) {
   if (A.tick?.(dt, now)) dirty = true;
   const dk = A.palette()[2]; A.isDark = dk; const Ft = dk ? 1 : 0; if (F !== Ft) { F = A.calm ? Ft : F + Math.sign(Ft - F) * Math.min(Math.abs(Ft - F), dt / 420); dirty = stripDirty = true; }
   if (reveal < 1e8) { const u = (now - revealT) / 1000; reveal = u > 1.25 ? 1e9 : S.lim * 60 * 1.06 * (1 - (1 - Math.min(1, u / 1.2)) ** 2.2); dirty = true; }
-  const ra = S.hide || (S.follow && !S.follow.keepReach) ? 0 : 1; if (reachA !== ra) { reachA = A.calm ? ra : reachA + Math.sign(ra - reachA) * Math.min(Math.abs(ra - reachA), dt / 300); dirty = true; }
+  const ra = S.hide || S.pick || S.route || (S.follow && !S.follow.keepReach) ? 0 : 1; if (reachA !== ra) { reachA = A.calm ? ra : reachA + Math.sign(ra - reachA) * Math.min(Math.abs(ra - reachA), dt / 300); dirty = true; }
+  { const step = (v, g, ms) => A.calm ? g : v + Math.sign(g - v) * Math.min(Math.abs(g - v), dt / ms), fr = frameFor().mpp, on = S.view === 'map'; const n0 = [notch, layA, homesA, trainA, moveA, pickA]; const close = fr / cam.mpp > 1.55; notch = step(notch, (hoverMap || close || S.all) && !S.follow ? 1 : 0, 260); layA = step(layA, S.all || S.pick ? 1 : 0, 260); pickA = step(pickA, S.pick ? 1 : 0, 500); homesA = step(homesA, S.homes && on && !S.follow && !S.hide ? 1 : 0, 500); trainA = step(trainA, S.trains && on && !S.follow && !S.hide ? 1 : 0, 400); moveA = step(moveA, S.playing || drag.strip ? 1 : 0, 250); if (n0.some((v, i) => v !== [notch, layA, homesA, trainA, moveA, pickA][i])) dirty = true; }
   warpGoal = S.view === "min" ? 1 : 0; if (A.warp !== warpGoal) { A.warpT = (A.warpT ?? (1 - warpGoal)); A.warpT += Math.sign(warpGoal - A.warpT) * Math.min(Math.abs(warpGoal - A.warpT), dt / 1500); if (A.calm) A.warpT = warpGoal; const u = A.warpT; A.warp = u < .5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2; dirty = true; }
   if (dirty || warpDirty) { solve(); numbers(); }
   if (A.warp > 0 || warpGoal) { if (warpDirty) { warpGoals(); if (A.warp < .02) wp.set(wg); } if (warpStep(dt) || warpDirty) dirty = true; } warpDirty = false;
   const k = A.calm || drag.on ? (drag.on ? .55 : 1) : 1 - Math.exp(-dt / (S.follow ? 160 : 170)); let mv = false; for (const q of ["x", "y", "mpp", "yaw", "pitch", "ox", "oy"]) { const d = goal[q] - cam[q], eps = q === "yaw" || q === "pitch" ? 1e-4 : q === "mpp" ? .01 : .4; if (Math.abs(d) > eps) { cam[q] += d * k; mv = true; } else cam[q] = goal[q]; } if (mv) dirty = true;
   dayWork(S.playing || drag.strip ? 2 : 7);
   const pal = A.palette()[1]; paint(pal);
-  if (dirty) { dirty = false; if (G) { drawGL(); } drawOver(); }
+  if (dirty) { dirty = false; if (G) { G.setCam(cam); } drawOver(); if (G) drawGL(); }
   if (stripDirty) { stripDirty = false; drawStrip(); }
   A.frames = (A.frames || 0) + 1;
 }
-A.drawNow = () => { solve(); if (G) drawGL(); drawOver(); };
+A.drawNow = () => { solve(); if (G) { G.setCam(cam); } drawOver(); if (G) drawGL(); };
 A.renderTo = (w, h, over, fn) => {                                // one still at another size (poster)
-  const keep = [W, H, dpr, { ...cam }, F, A.warp, S.m, reveal, reachA]; W = w / 1.6; H = h / 1.6; dpr = 1.6; reveal = 1e9; reachA = 1; Object.assign(S, over); F = sky.isDark(over.m) ? 1 : 0; G.resize(W, H, dpr); cache.key = ""; solve(); A.warp = over.view === "min" ? 1 : 0; if (A.warp) { warpGoals(); wp.set(wg); warpStep(1e9); } Object.assign(cam, over.cam); drawGL(); G.gl.finish(); const out = fn(G.gl.canvas, G.project); [W, H, dpr] = keep; Object.assign(cam, keep[3]); F = keep[4]; A.warp = keep[5]; S.m = keep[6]; reveal = keep[7]; reachA = keep[8]; G.resize(W, H, dpr); cache.key = ""; dirty = true; return out;
+  const keep = [W, H, dpr, { ...cam }, F, A.warp, S.m, reveal, reachA]; const lay = [homesA, trainA, notch, layA]; homesA = trainA = layA = 0; notch = 1; A.named = EMPTY; W = w / 1.6; H = h / 1.6; dpr = 1.6; reveal = 1e9; reachA = 1; Object.assign(S, over); F = sky.isDark(over.m) ? 1 : 0; G.resize(W, H, dpr); cache.key = ""; solve(); A.warp = over.view === "min" ? 1 : 0; if (A.warp) { warpGoals(); wp.set(wg); warpStep(1e9); } Object.assign(cam, over.cam); drawGL(); G.gl.finish(); const out = fn(G.gl.canvas, G.project); [W, H, dpr] = keep; Object.assign(cam, keep[3]); F = keep[4]; A.warp = keep[5]; S.m = keep[6]; reveal = keep[7]; reachA = keep[8]; [homesA, trainA, notch, layA] = lay; G.resize(W, H, dpr); cache.key = ""; dirty = true; return out;
 };
 
 // ---------- input: the map
-const drag = { on: false, strip: false, pts: new Map(), moved: 0, pin: false };
+var drag = { on: false, strip: false, pts: new Map(), moved: 0, pin: false };
 const near = (x, y, r) => { let best = r, bk = -1; for (let k = 0; k < nC; k++) { const p0 = cxPos(k); if (p0[2]) continue; const p = G.project(p0[0], p0[1]), d = Math.hypot(p[0] - x, p[1] - y); if (d < best) { best = d; bk = k; } } return bk; };
 A.near = near;
 const map = $("#map"); let last = null, pinch = 0, tapT = 0, tapXY = [0, 0];
 map.addEventListener("pointerdown", e => {
-  if (!G) return; map.setPointerCapture(e.pointerId); drag.pts.set(e.pointerId, [e.clientX, e.clientY]); if (drag.pts.size === 1) { drag.moved = 0; last = [e.clientX, e.clientY]; const y = G.project(...cxPos(S.cx)); drag.pin = !S.follow && !S.hide && Math.hypot(y[0] - e.clientX, y[1] - 18 - e.clientY) < (e.pointerType === "touch" ? 30 : 20); } else { drag.pin = false; const [a, b] = [...drag.pts.values()]; pinch = Math.hypot(a[0] - b[0], a[1] - b[1]); last = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; drag.moved = 99; } hideTip();
+  if (!G) return; map.setPointerCapture(e.pointerId); drag.pts.set(e.pointerId, [e.clientX, e.clientY]); if (drag.pts.size === 1) { drag.moved = 0; last = [e.clientX, e.clientY]; const y = G.project(...cxPos(S.cx)), pb = A.plateBox; drag.pin = !S.follow && !S.hide && !S.pick && (Math.hypot(y[0] - e.clientX, y[1] - e.clientY) < (e.pointerType === "touch" ? 26 : 18) || !!pb && e.clientX > pb[0] && e.clientX < pb[2] && e.clientY > pb[1] && e.clientY < pb[3]); } else { drag.pin = false; const [a, b] = [...drag.pts.values()]; pinch = Math.hypot(a[0] - b[0], a[1] - b[1]); last = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; drag.moved = 99; } hideTip();
 });
 const zoomAt = (x, y, f) => { const p = G.unproject(x, y); const old = goal.mpp; goal.mpp *= f; clampCam(); if (!p) return; const q = goal.mpp / old; if (S.view === "min") return; goal.x = p[0] + (goal.x - p[0]) * q; goal.y = p[1] + (goal.y - p[1]) * q; clampCam(); A.setMoved(); dirty = true; };
 A.setMoved = () => { if (!A.moved) { A.moved = true; A.ui?.tools(); } };
@@ -310,22 +331,24 @@ const up = e => {
 };
 map.addEventListener("pointerup", up); map.addEventListener("pointercancel", up);
 map.addEventListener("wheel", e => { if (!G) return; e.preventDefault(); if (S.follow && !S.follow.race) return; zoomAt(e.clientX, e.clientY, Math.exp(Math.max(-60, Math.min(60, e.deltaY)) * .0032)); }, { passive: false });
-map.addEventListener("pointerleave", () => hideTip());
+map.addEventListener("pointerleave", () => { hideTip(); hoverMap = false; dirty = true; });
+map.addEventListener("pointerenter", e => { if (e.pointerType === 'mouse') { hoverMap = true; dirty = true; } });
 map.addEventListener("touchend", e => { if (e.cancelable) e.preventDefault(); }, { passive: false });   // no second, ghost click on whatever appears under the finger
 const tip = $("#tip"); const hideTip = () => { tip.hidden = true; A.hover = -1; };
 function hover(e) { if (e.pointerType === "touch" || S.follow) return; const k = near(e.clientX, e.clientY, 16); map.classList.toggle("hit", k >= 0); if (k < 0) return hideTip(); const z = A.t(), a = A.arrCx(k); tip.hidden = false; tip.innerHTML = `<b>${A.cxName[k]}</b><span>${A.letters(A.cxRoutes[k])}</span>${S.hide ? "" : `<em>${k === S.cx ? z.tipStart : a <= 3600 ? z.tipMin(Math.ceil(a / 60)) : z.tipNo(60)}</em>`}`; const w = tip.offsetWidth, h = tip.offsetHeight; tip.style.transform = `translate(${Math.min(W - w - 8, e.clientX + 16)}px,${Math.max(8, e.clientY - h - 12)}px)`; A.hover = k; }
-A.tap = (x, y, type) => { const k = near(x, y, type === "touch" ? 34 : 24); if (k < 0) return; if (A.ui.tapStation(k)) return; A.setStart(k, false, true); };
+A.tap = (x, y, type) => { const hitN = (A.placed || []).find(r => !r.plate && x > r.box[0] - 5 && x < r.box[2] + 5 && y > r.box[1] - 5 && y < r.box[3] + 5), k = hitN ? hitN.k : near(x, y, type === "touch" ? 34 : 24); if (k < 0) return; if (A.ui.tapStation(k)) return; A.setStart(k, false, true); };
 A.setStart = (k, live, done) => {
-  const was = S.cx; S.cx = k; if (S.dest === k) S.dest = -1; if (!live && was !== k) A.startReveal(); dirty = true; stripDirty = true; A.saveURL(); $("#you").innerHTML = A.tag(k); $("#you").dataset.k = k; if (S.view === "min") { Object.assign(goal, frameFor()); wp.set(wg); } A.ui.ask(); if (!live) { const p = G ? G.project(...cxPos(k)) : null, [x0, y0, x1, y1] = free(); if (p && S.view === "map" && (p[0] < x0 + 30 || p[0] > x1 - 30 || p[1] < y0 + 40 || p[1] > y1 - 30 || !A.moved)) { const f = frameFor(); if (A.moved) f.mpp = goal.mpp; Object.assign(goal, f); } } if (done || !live) A.ui.startChanged();
+  const was = S.cx; S.cx = k; if (S.dest === k) S.dest = -1; if (!live && was !== k) A.startReveal(); dirty = true; stripDirty = true; A.saveURL();  if (S.view === "min") { Object.assign(goal, frameFor()); wp.set(wg); } A.ui.ask(); if (!live) { const p = G ? G.project(...cxPos(k)) : null, [x0, y0, x1, y1] = free(); if (p && S.view === "map" && (p[0] < x0 + 30 || p[0] > x1 - 30 || p[1] < y0 + 40 || p[1] > y1 - 30 || !A.moved)) { solve(); const f = frameFor(); if (A.moved) f.mpp = goal.mpp; Object.assign(goal, f); } } if (done || !live) A.ui.startChanged();
 };
-A.setTime = (m, end) => { if (A.ui.L) A.ui.L.anim = null; S.m = ((m % 1440) + 1440) % 1440; dirty = stripDirty = true; A.saveURL(); A.ui.timeChanged(end); };
+A.setTime = (m, end) => { if (A.ui.L) A.ui.L.anim = null; S.m = ((m % 1440) + 1440) % 1440; dirty = stripDirty = true; A.saveURL(); A.ui.scene?.(); A.ui.timeChanged(end); clearTimeout(A.rf); A.rf = setTimeout(A.refit, end ? 60 : 320); };
 map.addEventListener("keydown", e => { const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key]; if (d) { const c = Math.cos(cam.yaw), s = Math.sin(cam.yaw), u = goal.mpp * 70; goal.x += (c * d[0] - s * d[1]) * u; goal.y += (s * d[0] + c * d[1]) * u; clampCam(); A.setMoved(); dirty = true; e.preventDefault(); } else if (e.key === "+" || e.key === "=") { goal.mpp /= 1.25; clampCam(); A.setMoved(); dirty = true; } else if (e.key === "-") { goal.mpp *= 1.25; clampCam(); A.setMoved(); dirty = true; } else if (e.key === "Enter") A.ui.find("s"); });
 // ---------- input: the strip
 const strip = $("#strip"); const sx = e => { const r = strip.getBoundingClientRect(); return Math.max(0, Math.min(1439, (e.clientX - r.left) / r.width * 1440)); };
 let fine = null;
+for (const q of ["focus", "blur"]) strip.addEventListener(q, () => { stripDirty = true; });
 strip.addEventListener("pointerdown", e => { if (S.game && S.hide || S.follow) return; strip.setPointerCapture(e.pointerId); drag.strip = true; S.playing = false; A.ui.tools(); A.setTime(Math.round(sx(e))); });
 strip.addEventListener("pointermove", e => { if (drag.strip) A.setTime(Math.round(sx(e))); });
-const su = () => { if (drag.strip) { drag.strip = false; dirty = true; A.setTime(S.m, true); } }; strip.addEventListener("pointerup", su); strip.addEventListener("pointercancel", su);
+const su = () => { if (drag.strip) { drag.strip = false; dirty = true; A.refit(); A.setTime(S.m, true); } }; strip.addEventListener("pointerup", su); strip.addEventListener("pointercancel", su);
 const key = (e, d) => { if (S.hide || S.follow) return; S.playing = false; A.setTime(Math.floor(S.m) + d, true); e.preventDefault(); };
 strip.addEventListener("keydown", e => { const k = e.key, f = e.shiftKey ? 10 : 1; if (k === "ArrowLeft" || k === "ArrowDown") key(e, -f); else if (k === "ArrowRight" || k === "ArrowUp") key(e, f); else if (k === "PageUp") key(e, 60); else if (k === "PageDown") key(e, -60); else if (k === "Home") key(e, -Math.floor(S.m)); else if (k === "End") key(e, 1439 - Math.floor(S.m)); });
 for (const [id, d] of [["#back1", -1], ["#fwd1", 1]]) { let t = 0, n = 0; const b = $(id), go = () => { S.playing = false; A.setTime(Math.floor(S.m) + d, true); }, stop = () => { clearTimeout(t); t = 0; }; b.addEventListener("pointerdown", e => { if (S.hide) return; n = 0; const rep = () => { n++; go(); t = setTimeout(rep, n < 2 ? 380 : 90); }; rep(); }); for (const q of ["pointerup", "pointerleave", "pointercancel"]) b.addEventListener(q, stop); b.addEventListener("click", e => { if (e.detail === 0) go(); }); }
