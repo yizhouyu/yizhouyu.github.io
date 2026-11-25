@@ -106,7 +106,7 @@
   <h1 id="h1"></h1><span class="badge" id="badge"></span>
   <div class="right">
     <div class="lang" role="group" aria-label="Language"><button id="l-en" aria-pressed="false">EN</button><button id="l-zh" aria-pressed="false">中文</button></div>
-    <a class="home" href="/">yizhouyu.dev</a>
+    <a class="home" id="home" href="/demo/">← All demos</a>
   </div>
 </header>
 <main>
@@ -191,6 +191,7 @@ function labels() {   // everything that does not depend on the step
   const t = T();
   document.documentElement.lang = lang === "zh" ? "zh-CN" : "en";
   document.title = t.doc;
+  $("home").textContent = lang === "zh" ? "← 全部 demo" : "← All demos";
   $("h1").textContent = t.h1; $("badge").textContent = t.badge;
   $("replay").textContent = t.replay; $("auto").textContent = t.auto;
   $("sound").textContent = sound ? t.voiceOn : t.voiceOff;
