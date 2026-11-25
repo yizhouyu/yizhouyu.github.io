@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-T39LJ72QFL"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-T39LJ72QFL');
+    </script>
+
+    <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "8502e35b873b4becad641200564f6c41"}'></script><!-- End Cloudflare Web Analytics -->
+
+    <!-- GoatCounter Analytics -->
+    <script data-goatcounter="https://yizhouyu.goatcounter.com/count"
+            async src="//gc.zgo.at/count.js"></script>
+    <!-- End GoatCounter Analytics -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demos - Yizhou Yu</title>
+    <meta name="description" content="Small things Yizhou Yu built with AI agents, each one a page you can use.">
+    <meta name="robots" content="noindex">
+    <link rel="canonical" href="https://yizhouyu.dev/demo/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Yizhou Yu">
+    <meta property="og:title" content="Demos · Yizhou Yu">
+    <meta property="og:description" content="Small things Yizhou Yu built with AI agents, each one a page you can use.">
+    <meta property="og:url" content="https://yizhouyu.dev/demo/">
+    <meta property="og:image" content="https://yizhouyu.dev/assets/og.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@yizhou_yu">
+    <meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231E45FF'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='square'%3E%3Cpath d='M4.5 8.5 8 15.5 11.5 8.5M8 15.5V23.5'/%3E%3Cpath d='M13.5 8.5h6l-6 15h6'/%3E%3Cpath d='M20.5 8.5 24 15.5 27.5 8.5M24 15.5V23.5'/%3E%3C/g%3E%3C/svg%3E">
+<script>
+  /* Theme: ?theme= (screenshots) > localStorage 'theme' > system. Runs before paint. */
+  (function () {
+    var t = null;
+    try { t = new URLSearchParams(location.search).get('theme'); } catch (e) {}
+    if (t !== 'dark' && t !== 'light') { try { t = localStorage.getItem('theme'); } catch (e) {} }
+    if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@500;700;900&display=swap&text=%E4%BF%9E%E5%85%BB%E5%A5%95%E6%88%90%E7%B3%BB%E8%88%9F%EF%BC%9A" rel="stylesheet">
+<link rel="stylesheet" href="/assets/site.css?v=c0d77e25">
+<style>
+
+.bh { padding: 64px var(--gut) 48px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: end; }
+.bh h1 { font-size: clamp(64px, 10vw, 150px); }
+.bh p { margin-top: 20px; font: 500 22px/1.4 var(--font); color: var(--ink-2); max-width: 28em; }
+.bh .count { text-align: right; }
+.bh .count b { display: block; font: 900 96px/1 var(--font); font-stretch: 112%; color: var(--accent); }
+
+.list { list-style: none; border-top: 1px solid var(--line); }
+.item a { display: grid; grid-template-columns: 96px minmax(0, 1fr) 340px; text-decoration: none; border-bottom: 1px solid var(--line); transition: background .15s; }
+.item a:hover { background: var(--tint); }
+.item .no { padding: 26px 0 0 var(--gut); font: 900 34px/1 var(--font); font-stretch: 112%; color: var(--muted); }
+.item a:hover .no { color: var(--accent); }
+.item .tx { padding: 26px 28px 28px 8px; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid var(--line); }
+.item h2 { font: 900 clamp(26px, 2.6vw, 38px)/1.02 var(--font); font-stretch: 112%; text-transform: uppercase; letter-spacing: -.012em; }
+.item h2 .zh { font-weight: 900; font-stretch: normal; color: var(--accent); }
+.item p { color: var(--ink-2); font-size: 17px; max-width: 40em; }
+.item .meta { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+.item .meta [hidden] { display: none; }
+.item .cv { padding: 26px var(--gut) 26px 24px; }
+.item .cv img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border: 1px solid var(--line); transition: transform .6s cubic-bezier(.2,.7,.2,1); }
+.item a:hover .cv img { transform: scale(1.04); }
+
+@media (max-width: 900px) {
+  .bh { grid-template-columns: 1fr; padding-top: 36px; }
+  .bh .count { text-align: left; }
+  .bh .count b { font-size: 56px; }
+  .item a { grid-template-columns: 1fr; }
+  .item .no { padding: 18px var(--gut) 0; font-size: 22px; }
+  .item .tx { padding: 10px var(--gut) 22px; border-right: 0; }
+  .item .cv { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="frame">
+  <header class="nav">
+    <div class="brand">
+      <a class="yzy" href="/" aria-label="YZY — Yizhou Yu, home"><span class="y1">Y</span><span class="z">Z</span><span class="y2">Y</span></a>
+      <span class="who">Yizhou Yu · <span class="zh" lang="zh-Hans">俞奕舟</span></span>
+    </div>
+    <nav class="cells" aria-label="Sections">
+      <a href="/#now">Now</a>
+      <a href="/blog/">Writing</a>
+      <a href="/#vlogs">Vlogs</a>
+      <a href="/#weeks">Weeks</a>
+      <a href="/#contact-sec">About</a>
+      <a href="/#work">Work</a>
+    </nav>
+    <button class="tt" type="button" data-theme-toggle><svg class="tt-icon" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg><span data-theme-label>Light</span></button>
+  </header>
+  <div class="page" style="grid-template-columns:minmax(0,1fr)">
+    <main class="main">
+      <header class="bh">
+        <div>
+          <span class="cap">Demos</span>
+          <h1 class="d" style="margin-top:14px">Demos.</h1>
+          <p>Small things I built with AI agents. Each one is a page you can open and use.</p>
+        </div>
+        <div class="count"><b>02</b><span class="cap">Live</span></div>
+      </header>
+      <ol class="list" reversed>
+        <li class="item"><a href="/demo/ikea-brimnes/">
+          <span class="no" aria-hidden="true">02</span>
+          <div class="tx"><h2>IKEA BRIMNES storage bed, step by step</h2>
+          <p>A 48-step picture manual with no words, turned into a guide you can follow: a 3D animation for every step, narration and captions in English and Chinese, a picture of every piece of hardware, and the official drawing beside each step.</p>
+          <div class="meta cap"><time datetime="2026-11-24">Nov 24, 2026</time><span>48 steps</span><span>About 3 hours to build</span><span>Unofficial</span></div></div>
+          <div class="cv"><img loading="lazy" src="/demo/ikea-brimnes/finished.jpg" alt="3D render of the finished bed frame with drawers" width="1600" height="900"></div>
+        </a></li>
+        <li class="item"><a href="/demo/ikea-kallax/">
+          <span class="no" aria-hidden="true">01</span>
+          <div class="tx"><h2>IKEA KALLAX shelf, step by step</h2>
+          <p>The first test of the idea, on a 9-step manual. Claude read the manual page by page, wrote the build as data, and animated it in Blender. A program checks the animation before it goes out, for example that every screw turns clockwise.</p>
+          <div class="meta cap"><time datetime="2026-11-24">Nov 24, 2026</time><span>9 steps</span><span>About 25 minutes to build</span><span>Unofficial</span></div></div>
+          <div class="cv"><img loading="lazy" src="/demo/ikea-kallax/finished.jpg" alt="3D render of the finished 2 by 2 shelf unit" width="1600" height="900"></div>
+        </a></li>
+      </ol>
+    </main>
+  </div>
+  <footer class="foot">
+    <a class="yzy" href="/" aria-label="YZY — home"><span class="y1">Y</span><span class="z">Z</span><span class="y2">Y</span></a>
+    <p><b>YZY reads the same both ways.</b></p>
+  </footer>
+</div>
+<script src="/assets/site.js?v=254b0fcb"></script>
+</body>
+</html>
