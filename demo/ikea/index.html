@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>KALLAX step by step · unofficial demo</title>
+<meta name="description" content="An unofficial, independent demo: a picture-only assembly manual turned into a step-by-step 3D guide.">
+<style>
+  :root { --bg:#f4f1ec; --card:#ffffff; --ink:#22242a; --mute:#6b6f76; --line:#e4dfd6; --accent:#e07a12; --accent-ink:#ffffff; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#17181b; --card:#212327; --ink:#f1efe9; --mute:#a3a7ae; --line:#34373d; --accent:#f08a24; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+  a { color:inherit; }
+  header { display:flex; align-items:center; gap:12px; padding:18px 24px 6px; flex-wrap:wrap; max-width:1500px; margin:0 auto; }
+  header h1 { font-size:20px; margin:0; font-weight:600; }
+  .badge { font-size:12px; font-weight:600; letter-spacing:.02em; border:1px solid var(--line); border-radius:6px; padding:2px 8px; color:var(--mute); }
+  header .home { margin-left:auto; font-size:14px; color:var(--mute); text-decoration:none; }
+  main { display:grid; align-items:start; grid-template-columns:minmax(0,1fr) 380px; gap:20px; padding:12px 24px 8px; max-width:1500px; margin:0 auto; }
+  @media (max-width: 980px) { main { grid-template-columns:1fr; padding:12px 16px 8px; } }
+  .stage { background:var(--card); border-radius:18px; overflow:hidden; border:1px solid var(--line); }
+  .screen { position:relative; }
+  video { display:block; width:100%; aspect-ratio:16/9; background:#cbb89a; }
+  #cc { position:absolute; left:5%; right:5%; bottom:5%; text-align:center; pointer-events:none; }
+  #cct { display:inline-block; background:rgba(12,14,18,.78); color:#fff; border-radius:8px; padding:6px 14px; font-size:clamp(14px,2.1vw,24px); line-height:1.35; }
+  #cct:empty { display:none; }
+  .bar { display:flex; align-items:center; gap:10px; padding:12px 16px; flex-wrap:wrap; }
+  .dots { display:flex; gap:6px; flex:1; min-width:160px; }
+  .dots button { flex:1; height:8px; border-radius:4px; border:0; background:var(--line); cursor:pointer; padding:0; }
+  .dots button.done { background:color-mix(in srgb, var(--accent) 45%, var(--line)); }
+  .dots button.on { background:var(--accent); }
+  button.ctl, select { font:inherit; color:var(--ink); background:transparent; border:1px solid var(--line); border-radius:10px; padding:7px 12px; cursor:pointer; }
+  button.ctl[aria-pressed="true"] { border-color:var(--accent); color:var(--accent); }
+  aside { background:var(--card); border-radius:18px; border:1px solid var(--line); padding:22px; display:flex; flex-direction:column; gap:16px; }
+  .num { display:flex; align-items:flex-end; gap:10px; }
+  .num b { font-size:84px; line-height:.9; font-weight:700; }
+  .num span { color:var(--mute); padding-bottom:8px; }
+  h2 { font-size:26px; line-height:1.25; margin:0; font-weight:600; }
+  .say { color:var(--mute); margin:0; }
+  .needs { list-style:none; margin:0; padding:0; border-top:1px solid var(--line); }
+  .needs li { padding:10px 0; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; gap:12px; }
+  .needs li i { font-style:normal; color:var(--mute); }
+  .count { font-size:14px; color:var(--mute); }
+  .nav { display:flex; gap:10px; }
+  .nav button, .wide { flex:1; font:inherit; font-weight:600; border-radius:12px; padding:14px; cursor:pointer; border:1px solid var(--line); background:transparent; color:var(--ink); }
+  .nav button.next { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); flex:2; }
+  .nav button:disabled { opacity:.4; cursor:default; }
+  .wide { width:100%; }
+  .links { display:flex; flex-direction:column; gap:8px; border-top:1px solid var(--line); padding-top:14px; font-size:15px; }
+  .links a { text-decoration:none; display:flex; justify-content:space-between; gap:12px; padding:4px 0; }
+  .links a:hover { color:var(--accent); }
+  .links a span { color:var(--mute); }
+  .note { font-size:13px; color:var(--mute); margin:0; }
+  footer { max-width:1500px; margin:0 auto; padding:8px 24px 32px; font-size:13px; color:var(--mute); }
+  footer p { margin:6px 0; max-width:1000px; }
+  dialog { border:0; border-radius:14px; padding:0; max-width:min(94vw,1100px); background:var(--card); color:var(--ink); }
+  dialog img { display:block; width:100%; }
+  dialog .cap { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 16px; font-size:14px; }
+  dialog::backdrop { background:rgba(0,0,0,.6); }
+</style>
+</head>
+<body>
+<header>
+  <h1>KALLAX shelf unit 2×2 · step by step</h1><span class="badge">Unofficial demo</span>
+  <a class="home" href="/">yizhouyu.dev</a>
+</header>
+<main>
+  <section class="stage">
+    <div class="screen"><video id="v" playsinline muted></video><div id="cc"><span id="cct"></span></div></div>
+    <div class="bar">
+      <div class="dots" id="dots"></div>
+      <button class="ctl" id="replay">Replay</button>
+      <select id="speed" aria-label="Speed"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option></select>
+      <button class="ctl" id="ccbtn" aria-pressed="true" title="Captions (C)">CC</button>
+      <button class="ctl" id="sound" aria-pressed="true">Voice on</button>
+      <button class="ctl" id="auto" aria-pressed="false">Auto-advance</button>
+      <button class="ctl" id="voice" aria-pressed="false" hidden>Voice control</button>
+    </div>
+  </section>
+  <aside>
+    <div class="num"><b id="num"></b><span id="of"></span></div>
+    <h2 id="title"></h2>
+    <p class="say" id="say"></p>
+    <ul class="needs" id="needs"></ul>
+    <div class="count" id="count"></div>
+    <div class="nav"><button id="prev">Back</button><button class="next" id="next">Done, next step</button></div>
+    <button class="wide" id="showdone">See the finished shelf</button>
+    <p class="note" id="ai" hidden>The hands in this step were added by a video model on top of the 3D frames.</p>
+    <div class="links">
+      <a href="https://www.ikea.com/us/en/p/kallax-shelf-unit-white-20631639/" target="_blank" rel="noopener">KALLAX 2×2 on ikea.com <span>↗</span></a>
+      <a href="https://www.ikea.com/us/en/assembly_instructions/kallax-shelf-unit-white__AA-2703308-1-100.pdf" target="_blank" rel="noopener">Official assembly instructions (PDF) <span>↗</span></a>
+    </div>
+    <p class="note">Keyboard: ← → to move, space to replay, C for captions. Voice control (some browsers): say “next”, “back” or “again”.</p>
+  </aside>
+</main>
+<footer>
+  <p><b>Unofficial, independent demo.</b> Not affiliated with, sponsored or endorsed by Inter IKEA Systems B.V. or any IKEA company. IKEA and KALLAX are trademarks of Inter IKEA Systems B.V., used here only to say which product this guide is for.</p>
+  <p>The 3D animation is original work made from the build order in the official instructions; no IKEA drawings, photos or logos are reproduced here. Sizes are approximate. Always follow the official instructions that came with your product, including fixing the unit to the wall.</p>
+  <p>If you hold rights in something shown here and want it changed or removed, write to me through <a href="/#contact-sec">yizhouyu.dev</a> and I will take it down.</p>
+</footer>
+<dialog id="done"><img src="finished.jpg" alt="3D render of the finished KALLAX 2×2 shelf unit standing upright">
+  <div class="cap"><span>The finished unit (3D render, sizes approximate)</span><button class="ctl" id="closedone">Close</button></div></dialog>
+<audio id="a"></audio>
+<script>
+const STEPS = [{"key": "intro", "num": null, "label": "Picture manual → step-by-step video", "title": "KALLAX shelf unit 2×2", "needs": ["Outer panel × 4", "long shelf × 1", "short divider × 2", "Long screw × 8", "dowel × 10", "hex key × 1"], "dowel": 0, "screw": 0, "say": "IKEA's KALLAX shelf unit. The assembly steps are all pictures, with no words. Here they are as a video. First, check the parts: four outer panels, one long shelf, two short dividers, eight long screws, ten wooden dowels, and one hex key.", "caps": [[0.35, 2.21, "IKEA's KALLAX shelf unit."], [2.06, 4.68, "The assembly steps are all pictures"], [4.53, 5.64, "with no words."], [5.49, 7.36, "Here they are as a video."], [7.21, 10.24, "First, check the parts: four outer panels"], [10.09, 12.64, "one long shelf, two short dividers"], [12.49, 15.17, "eight long screws, ten wooden dowels"], [15.02, 16.27, "and one hex key."]], "ai": false, "voOffset": 0.35}, {"key": "s1", "num": 1, "label": "", "title": "Join two outer panels at a corner", "needs": ["Long screw × 2", "hex key"], "dowel": 0, "screw": 2, "say": "Step 1. Stand two outer panels in a corner. Two long screws go through the side of one panel into the end of the other. Tighten them clockwise with the hex key.", "caps": [[0.35, 0.91, "Step 1."], [0.76, 2.95, "Stand two outer panels in a corner."], [2.8, 7.31, "Two long screws go through the side of one panel into the end of the other."], [7.16, 9.64, "Tighten them clockwise with the hex key."]], "ai": false, "voOffset": 0.35}, {"key": "s2", "num": 2, "label": "", "title": "Tap in dowels, fit the first divider", "needs": ["Dowel × 2", "hammer"], "dowel": 2, "screw": 2, "say": "Step 2. Tap two dowels into the middle of the outer panel, then push a short divider onto them.", "caps": [[0.35, 0.93, "Step 2."], [0.78, 4.03, "Tap two dowels into the middle of the outer panel"], [3.88, 6.26, "then push a short divider onto them."]], "ai": false, "voOffset": 0.35}, {"key": "s3", "num": 3, "label": "", "title": "Fit the long shelf", "needs": ["Dowel × 2"], "dowel": 4, "screw": 2, "say": "Step 3. Put two dowels in one end of the long shelf, then push it against the next panel and the divider.", "caps": [[0.35, 0.92, "Step 3."], [0.77, 3.58, "Put two dowels in one end of the long shelf"], [3.43, 6.72, "then push it against the next panel and the divider."]], "ai": false, "voOffset": 0.35}, {"key": "s4", "num": 4, "label": "", "title": "Dowels through the long shelf", "needs": ["Dowel × 2"], "dowel": 6, "screw": 2, "say": "Step 4. Push two dowels through the holes in the middle of the long shelf. Leave half sticking out.", "caps": [[0.35, 0.92, "Step 4."], [0.77, 4.87, "Push two dowels through the holes in the middle of the long shelf."], [4.72, 6.31, "Leave half sticking out."]], "ai": false, "voOffset": 0.35}, {"key": "s5", "num": 5, "label": "", "title": "Fit the second divider", "needs": [], "dowel": 6, "screw": 2, "say": "Step 5. Push the second short divider onto those dowels. The two dividers form a cross.", "caps": [[0.35, 1.02, "Step 5."], [0.87, 4.62, "Push the second short divider onto those dowels."], [4.47, 6.86, "The two dividers form a cross."]], "ai": true, "voOffset": 0.35}, {"key": "s6", "num": 6, "label": "", "title": "Four more dowels", "needs": ["Dowel × 4"], "dowel": 10, "screw": 2, "say": "Step 6. Add four dowels: two in the other end of the long shelf, two in the second divider.", "caps": [[0.35, 0.99, "Step 6."], [0.84, 2.1, "Add four dowels"], [1.95, 4.83, "two in the other end of the long shelf"], [4.68, 6.64, "two in the second divider."]], "ai": false, "voOffset": 0.35}, {"key": "s7", "num": 7, "label": "", "title": "Fit the third outer panel", "needs": ["Holes face in"], "dowel": 10, "screw": 2, "say": "Step 7. Fit the third outer panel. The side with the dowel holes faces in.", "caps": [[0.35, 1.02, "Step 7."], [0.87, 2.93, "Fit the third outer panel."], [2.78, 5.8, "The side with the dowel holes faces in."]], "ai": false, "voOffset": 0.35}, {"key": "s8", "num": 8, "label": "", "title": "Close the frame, drive 6 screws", "needs": ["Long screw × 6", "hex key"], "dowel": 10, "screw": 8, "say": "Step 8. Close the frame with the last outer panel, then drive the remaining six screws into the three open corners.", "caps": [[0.35, 0.92, "Step 8."], [0.77, 3.41, "Close the frame with the last outer panel"], [3.26, 7.22, "then drive the remaining six screws into the three open corners."]], "ai": false, "voOffset": 0.35}, {"key": "s9", "num": 9, "label": "", "title": "Felt pads on, stand it up", "needs": ["Felt pad × 4"], "dowel": 10, "screw": 8, "say": "Step 9. Stick the four felt pads on the outside of one side panel, then stand the unit up on the pads.", "caps": [[0.35, 0.96, "Step 9."], [0.81, 4.74, "Stick the four felt pads on the outside of one side panel"], [4.59, 7.03, "then stand the unit up on the pads."]], "ai": false, "voOffset": 0.35}, {"key": "end", "num": null, "label": "Last step", "title": "Fix it to the wall", "needs": ["See manual steps 10–13"], "dowel": 10, "screw": 8, "say": "Last, follow steps 10 to 13 of the manual and fix the unit to the wall, so it cannot tip over. Done.", "caps": [[0.35, 0.86, "Last"], [0.71, 5.54, "follow steps 10 to 13 of the manual and fix the unit to the wall"], [5.39, 7.12, "so it cannot tip over."], [6.97, 7.48, "Done."]], "ai": false, "voOffset": 0.35}];
+const $ = id => document.getElementById(id);
+const v = $("v"), a = $("a"), cc = $("cct");
+let i = 0, sound = true, auto = false, timer = null, captions = true;
+try { captions = localStorage.getItem("cc") !== "off"; } catch (e) {}
+const total = STEPS.filter(s => s.num).length;
+STEPS.forEach((s, n) => { const b = document.createElement("button"); b.title = s.title; b.onclick = () => go(n); $("dots").appendChild(b); });
+
+function go(n) {
+  i = Math.max(0, Math.min(STEPS.length - 1, n));
+  const s = STEPS[i];
+  clearTimeout(timer);
+  $("num").textContent = s.num ?? (i === 0 ? "Start" : "Last");
+  $("num").style.fontSize = s.num ? "" : "44px";
+  $("of").textContent = s.num ? "/ " + total : s.label;
+  $("title").textContent = s.title;
+  $("say").textContent = s.say;
+  $("needs").innerHTML = s.needs.map(x => { const m = x.match(/^(.*?)\s*×\s*(\d+)$/); return m ? `<li>${m[1]}<i>× ${m[2]}</i></li>` : `<li>${x}</li>`; }).join("");
+  $("count").textContent = i === 0 ? "" : `Used so far: dowels ${s.dowel} / 10, long screws ${s.screw} / 8`;
+  $("ai").hidden = !s.ai;
+  $("prev").disabled = i === 0;
+  $("next").textContent = i === STEPS.length - 1 ? "Start over" : (i === 0 ? "Start building" : "Done, next step");
+  [...$("dots").children].forEach((b, n) => b.className = n === i ? "on" : n < i ? "done" : "");
+  v.src = `clips/${s.key}.mp4`;
+  a.src = `audio/${s.key}.mp3`;
+  play();
+}
+function play() {
+  const rate = parseFloat($("speed").value);
+  v.currentTime = 0; v.playbackRate = rate; v.play().catch(() => {});
+  a.pause(); a.currentTime = 0; a.playbackRate = rate;
+  clearTimeout(timer);
+  if (sound) timer = setTimeout(() => a.play().catch(() => {}), STEPS[i].voOffset * 1000 / rate);
+  drawCaption();
+}
+// captions follow the picture's own clock, so they stay in step at any speed and with the voice off
+function drawCaption() {
+  const t = v.currentTime, c = STEPS[i].caps.find(c => t >= c[0] && t < c[1]);
+  cc.textContent = captions && c ? c[2] : "";
+}
+function setCaptions(on) {
+  captions = on; $("ccbtn").setAttribute("aria-pressed", on);
+  try { localStorage.setItem("cc", on ? "on" : "off"); } catch (e) {}
+  drawCaption();
+}
+v.ontimeupdate = drawCaption;
+v.onended = () => { cc.textContent = ""; if (auto && i < STEPS.length - 1) timer = setTimeout(() => go(i + 1), 1200); };
+$("next").onclick = () => go(i === STEPS.length - 1 ? 0 : i + 1);
+$("prev").onclick = () => go(i - 1);
+$("replay").onclick = play;
+$("speed").onchange = play;
+$("ccbtn").onclick = () => setCaptions(!captions);
+$("sound").onclick = e => { sound = !sound; e.target.setAttribute("aria-pressed", sound); e.target.textContent = sound ? "Voice on" : "Voice off"; if (!sound) a.pause(); };
+$("auto").onclick = e => { auto = !auto; e.target.setAttribute("aria-pressed", auto); };
+$("showdone").onclick = () => $("done").showModal();
+$("closedone").onclick = () => $("done").close();
+$("done").onclick = e => { if (e.target === $("done")) $("done").close(); };
+document.addEventListener("keydown", e => {
+  if (e.target.tagName === "SELECT") return;
+  if (e.key === "ArrowRight") go(i + 1); else if (e.key === "ArrowLeft") go(i - 1);
+  else if (e.key === " ") { e.preventDefault(); play(); }
+  else if (e.key === "c" || e.key === "C") setCaptions(!captions);
+});
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SR) {
+  const btn = $("voice"); btn.hidden = false;
+  let rec = null, on = false;
+  btn.onclick = () => {
+    on = !on; btn.setAttribute("aria-pressed", on);
+    if (!on) { rec && rec.stop(); return; }
+    rec = new SR(); rec.lang = "en-US"; rec.continuous = true; rec.interimResults = false;
+    rec.onresult = ev => {
+      const t = ev.results[ev.results.length - 1][0].transcript;
+      if (/next|done/i.test(t)) go(i + 1); else if (/back|previous/i.test(t)) go(i - 1); else if (/again|replay|repeat/i.test(t)) play();
+    };
+    rec.onend = () => { if (on) try { rec.start(); } catch (e) {} };
+    rec.onerror = ev => { if (ev.error === "not-allowed") { on = false; btn.setAttribute("aria-pressed", false); } };
+    try { rec.start(); } catch (e) {}
+  };
+}
+$("ccbtn").setAttribute("aria-pressed", captions);
+const q = new URLSearchParams(location.search);
+go(Math.max(0, Math.min(STEPS.length - 1, parseInt(q.get("step") || "0", 10) || 0)));
+if (q.get("show") === "finished") $("done").showModal();
+</script>
+</body>
+</html>
