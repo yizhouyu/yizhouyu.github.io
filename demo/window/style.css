@@ -65,9 +65,9 @@ main[data-ch="2"] #duo{height:178px;width:100%;margin-top:8px;touch-action:none;
 #pair{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--mat)}#pair button{position:relative;overflow:hidden;text-align:left}#pair canvas{position:absolute;inset:0;width:100%;height:100%}#pair span{position:absolute;left:0;top:0;padding:9px 14px;background:rgba(26,30,36,.84);color:#fff;font:400 18px/1.25 "Marcellus W","Zhuque W",sans-serif}#pair button[data-s=win] span{background:var(--sun);color:#1c2425}#pair button[data-s=lose]{filter:saturate(.35) brightness(.8)}#pair button:not([disabled]):hover span{background:#1c2425}
 .step i.no{background:var(--block)}
 #head .qn{font:400 20px/1.3 "Marcellus W","Zhuque W",sans-serif;margin-top:24px}.opts{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}.opts button{min-width:76px;min-height:48px;padding:0 14px;border:1.5px solid var(--line);font:400 18px/1 "Marcellus W","Zhuque W",sans-serif}.opts button:hover{border-color:var(--ink)}.opts button[aria-pressed=true]{border-color:var(--ink);background:var(--sun);color:#1c2425}
-main[data-mode=free] #head p.big{min-height:3.9em}
-#head .why{min-height:80px;font-size:16px;color:var(--dim)}.why .in{min-height:0;border-color:currentColor;font-size:16px}
-.extra{flex-basis:100%}.extra .sm{font-size:15px;color:var(--dim)}
+.why{font-size:16px;color:var(--dim)}#head .why{margin-top:12px}.extra .why{margin-top:10px}.why .in{min-height:0;border-color:currentColor;font-size:16px}
+.extra{flex-basis:100%}.extra .sm b,#head p.sm b{font-weight:600;color:var(--ink)}dialog .in{border-color:currentColor}
+.extra .sm{font-size:15px;color:var(--dim)}
 .cmp{display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;margin-top:14px}.cmp>span{grid-column:1/3;font-size:14px;color:var(--dim)}.cmp div{border-top:2px solid var(--line);padding-top:8px;font-size:14px;line-height:1.35}.cmp div.on{border-color:var(--sun)}.cmp div span{color:var(--dim)}.cmp b{display:block;font:400 23px/1.3 "Marcellus W","Zhuque W",sans-serif}
 main[data-mode=free]:not([data-more="1"]) #play{visibility:hidden}main[data-mode=ask] #dayrow,main[data-mode=guess] #dayrow{display:none}
 svg.sd g[tabindex]{outline:none}svg.sd g[tabindex]:focus-visible .w{stroke:var(--ink);stroke-width:2.5}
