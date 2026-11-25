@@ -74,7 +74,7 @@
       <button class="ctl" id="ccbtn" aria-pressed="true" title="Captions (C)">CC</button>
       <button class="ctl" id="sound" aria-pressed="true">Voice on</button>
       <button class="ctl" id="auto" aria-pressed="false">Auto-advance</button>
-      <button class="ctl" id="voice" aria-pressed="false" hidden>Voice control</button>
+      <button class="ctl" id="voice" aria-pressed="false" hidden title="Hands full? Turn this on and say “next”, “back” or “again” instead of clicking. Uses your microphone.">Hands-free</button>
     </div>
   </section>
   <aside>
@@ -90,7 +90,8 @@
       <a href="https://www.ikea.com/us/en/p/kallax-shelf-unit-white-20631639/" target="_blank" rel="noopener">KALLAX 2×2 on ikea.com <span>↗</span></a>
       <a href="https://www.ikea.com/us/en/assembly_instructions/kallax-shelf-unit-white__AA-2703308-1-100.pdf" target="_blank" rel="noopener">Official assembly instructions (PDF) <span>↗</span></a>
     </div>
-    <p class="note">Keyboard: ← → to move, space to replay, C for captions. Voice control (some browsers): say “next”, “back” or “again”.</p>
+    <p class="note" id="vstat" hidden></p>
+    <p class="note">Keyboard: ← → to move, space to replay, C for captions. Hands full? In browsers that support it, turn on Hands-free and say “next”, “back” or “again”.</p>
   </aside>
 </main>
 <footer>
@@ -171,6 +172,8 @@ if (SR) {
   let rec = null, on = false;
   btn.onclick = () => {
     on = !on; btn.setAttribute("aria-pressed", on);
+    $("vstat").hidden = !on;
+    $("vstat").textContent = "Hands-free is on. Listening: say “next”, “back” or “again”.";
     if (!on) { rec && rec.stop(); return; }
     rec = new SR(); rec.lang = "en-US"; rec.continuous = true; rec.interimResults = false;
     rec.onresult = ev => {
@@ -178,7 +181,9 @@ if (SR) {
       if (/next|done/i.test(t)) go(i + 1); else if (/back|previous/i.test(t)) go(i - 1); else if (/again|replay|repeat/i.test(t)) play();
     };
     rec.onend = () => { if (on) try { rec.start(); } catch (e) {} };
-    rec.onerror = ev => { if (ev.error === "not-allowed") { on = false; btn.setAttribute("aria-pressed", false); } };
+    rec.onerror = ev => { if (ev.error === "not-allowed" || ev.error === "service-not-allowed") {
+      on = false; btn.setAttribute("aria-pressed", false);
+      $("vstat").hidden = false; $("vstat").textContent = "Hands-free needs microphone access. Allow it in the browser and try again."; } };
     try { rec.start(); } catch (e) {}
   };
 }
