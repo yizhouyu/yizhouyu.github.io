@@ -21,3 +21,6 @@
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Plaintext sources and passwords for password-protected pages (tools/protect.mjs). Never commit.
+_private/
