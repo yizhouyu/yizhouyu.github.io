@@ -21,6 +21,27 @@
   function store(kind) { try { return window[kind]; } catch (e) { return null; } }
   function read(kind) { try { return store(kind).getItem(SLOT); } catch (e) { return null; } }
   function write(kind, v) { try { store(kind).setItem(SLOT, v); } catch (e) {} }
+  /* Speed bump against guessing on the page: every 3 wrong tries lock the form, 1 min at first and
+     doubling up to 1 h. It lives in this browser only, so it does not stop offline guessing. */
+  var TRIES = SLOT + ':tries', MAX_TRIES = 3, LOCK_MS = 60 * 1000, LOCK_MAX_MS = 60 * 60 * 1000, TRIES_TTL_MS = 24 * 60 * 60 * 1000;
+  function tries() {
+    try {
+      var t = JSON.parse(localStorage.getItem(TRIES));
+      if (t && t.n > 0 && Math.abs(Date.now() - t.at) < TRIES_TTL_MS) return { n: t.n, at: t.at, until: t.until || 0 };
+    } catch (e) {}
+    return { n: 0, at: 0, until: 0 };
+  }
+  function lockedFor() { return Math.min(tries().until - Date.now(), LOCK_MAX_MS); }
+  /* Records one wrong try. Returns how many tries are left before the next lock (0 = locked now). */
+  function strike() {
+    var t = tries(), now = Date.now();
+    t.n++; t.at = now;
+    if (t.n % MAX_TRIES === 0) t.until = now + Math.min(LOCK_MS * Math.pow(2, t.n / MAX_TRIES - 1), LOCK_MAX_MS);
+    try { localStorage.setItem(TRIES, JSON.stringify(t)); } catch (e) {}
+    return (MAX_TRIES - t.n % MAX_TRIES) % MAX_TRIES;
+  }
+  function pardon() { try { localStorage.removeItem(TRIES); } catch (e) {} }
+
   function forget() { ['sessionStorage', 'localStorage'].forEach(function (k) { try { store(k).removeItem(SLOT); } catch (e) {} }); }
 
   async function derive(password) {
@@ -132,9 +153,35 @@
     });
   }
 
+  /* Shows the countdown and disables the form while locked. Returns false when not locked. */
+  var ticker = null;
+  function lockout() {
+    clearInterval(ticker);
+    function tick() {
+      var ms = lockedFor();
+      if (ms <= 0) return false;
+      var s = Math.ceil(ms / 1000);
+      var text = 'Too many wrong attempts. Try again in ' + Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2) + '.';
+      input.disabled = button.disabled = true;
+      if (msg.textContent !== text) msg.textContent = text;
+      return true;
+    }
+    if (!tick()) return false;
+    ticker = setInterval(function () {
+      if (tick()) return;
+      clearInterval(ticker);
+      input.disabled = button.disabled = false;
+      msg.textContent = '';
+      form.classList.remove('bad');
+      try { input.focus(); } catch (e) {}
+    }, 250);
+    return true;
+  }
+
   function showForm(text) {
     document.body.classList.remove('checking');
     msg.textContent = text || '';
+    if (lockout()) return;
     try { input.focus(); } catch (e) {}
   }
 
@@ -159,6 +206,7 @@
   form.addEventListener('submit', async function (ev) {
     ev.preventDefault();
     if (button.disabled || !input.value) return;
+    if (lockout()) return;                   // locked from another tab
     form.classList.remove('bad');
     msg.textContent = '';
     button.disabled = true;
@@ -173,10 +221,14 @@
       button.innerHTML = label;
       void form.offsetWidth;                 // restart the nudge animation
       form.classList.add('bad');
-      msg.textContent = 'Wrong password';
-      input.select();
+      var left = strike();
+      if (!lockout()) {
+        msg.textContent = 'Wrong password. ' + left + (left === 1 ? ' attempt' : ' attempts') + ' left.';
+        input.select();
+      }
       return;
     }
+    pardon();
     forget();
     write(keep.checked ? 'localStorage' : 'sessionStorage', b64e(raw));
     await parsed();
