@@ -1,0 +1,250 @@
+import { World, seatCamera, project, light, V } from './gl.js';
+import { Cabin } from './cabin.js';
+import * as E from './engine.js';
+import { LM } from './pts.js';
+import { T, LMN, RANK, fmt } from './i18n.js';
+import { sunAt, nyNow } from './sun.js';
+
+const $ = id => document.getElementById(id), root = document.documentElement, clamp = (x, a, b) => Math.min(b, Math.max(a, x)), wait = ms => new Promise(r => setTimeout(r, ms)), mix = (a, b, k) => a + (b - a) * k;
+const store = { get: k => { try { return localStorage.getItem('seat.' + k); } catch { return null; } }, set: (k, v) => { try { localStorage.setItem('seat.' + k, v); } catch { } } };
+const url = new URLSearchParams(location.search), hash = () => new URLSearchParams(location.hash.slice(1));
+let lang = url.get('lang') || store.get('lang') || (/^zh/i.test(navigator.language) ? 'zh' : 'en'); if (!T[lang]) lang = 'en';
+const t = () => T[lang], lmName = id => LMN[lang][id], still = matchMedia('(prefers-reduced-motion:reduce)').matches;
+const isDark = () => root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme:dark)').matches;
+
+// ---------- state ----------
+const S = { step: 1, data: null, gl: true, tr: null, sec: 0, speed: 0, until: 0, done: null, look: { L: { yaw: 0, tilt: -4, fov: 30, uy: 0, ut: 0, uz: 1 }, R: { yaw: 0, tilt: -4, fov: 30, uy: 0, ut: 0, uz: 1 } }, open: { L: 0, R: 0 }, want: { L: 0, R: 0 }, glow: { L: 0, R: 0 }, hover: { L: 0, R: 0 }, labels: true, pick: null, first: null, wind: 45, lit: null, loop: null, token: 0, tool: { ap: 'EWR', k: 'A', w: null, g: null, r: 'f', d: 'evening' }, dark: isDark() ? 1 : 0, booked: {}, seen: { R: 0, L: 0, W: 0 }, game: null, focusW: { L: 1, R: 1 }, pileDone: false };
+window.__seat = S; S.E = E;
+const cv = $('c'); let gl, world, cabin, dpr = 1, Wd = 0, Hd = 0, rect = { L: {}, R: {} }, slow = 0, scale = 1;
+
+// ---------- layout ----------
+const phone = () => Wd < 760;
+function layout(now) {
+  Wd = innerWidth; Hd = innerHeight; const ph = phone(), tool = S.step === 5, land = Hd < 520; const top = ph ? 52 : 56;
+  const R = { L: {}, R: {} }, fl = S.focusW.L, fr = S.focusW.R; let y0, h, w, gap;
+  if (tool) {
+    if (ph) { w = Math.min(Wd * .39, 160); h = w * 1.22; gap = 34; y0 = top + 6; R.L = { cx: Wd / 2 - gap / 2 - w / 2, cy: y0 + h / 2, w, h }; R.R = { ...R.L, cx: Wd / 2 + gap / 2 + w / 2 }; }
+    else { h = Math.min(Hd * .58, 560, Wd * .42); w = h * .70; gap = Math.max(58, Wd * .05); const x0 = Math.max(Wd * .045, 40); y0 = Math.max(top + 10, (Hd - h) / 2 - 30); if (w * 2 + gap > Wd * .54) { w = (Wd * .54 - gap) / 2; h = w / .7; y0 = Math.max(top + 10, (Hd - h) / 2 - 30); } R.L = { cx: x0 + w / 2, cy: y0 + h / 2, w, h }; R.R = { ...R.L, cx: x0 + w * 1.5 + gap }; }
+  } else if (land) { h = Hd * .62; w = h * .74; y0 = top + 36; R.L = { cx: w / 2 + 20, cy: y0 + h / 2, w, h }; R.R = { cx: Wd - w / 2 - 20, cy: y0 + h / 2, w, h }; }
+  else if (ph) { // two small windows; the chosen one grows
+    const gapP = 34, mg = 24, room = Wd - mg * 2 - gapP, base = room / 2, wl = base * (1 + (fl - fr) * .46), wr = room - wl; const dw = Hd < 730 ? 150 : 186; S.phDial = dw; const tallest = Math.min(S.step === 3 ? Math.max(96, Hd - (top + 88) - dw - 262) : S.step === 4 ? Hd - (top + 116) - (Hd < 660 ? 396 : Hd < 700 ? 380 : 335) : Hd * .47, Math.max(wl, wr) * 1.42), k = tallest / (Math.max(wl, wr) * 1.42); const hh = v => v * 1.42 * k * (k < 1 ? 1 : 1); y0 = top + (S.step === 3 ? 92 : S.step === 4 ? 112 : 116 + clamp((Hd - 700) * .12, 0, 40)); const H = tallest; R.L = { cx: mg + wl / 2, w: wl, h: Math.min(hh(wl), H) }; R.R = { cx: mg + wl + gapP + wr / 2, w: wr, h: Math.min(hh(wr), H) }; R.L.cy = R.R.cy = y0 + H / 2; h = H; }
+  else { y0 = top + clamp(Hd * .125, 84, 128); h = Math.max(170, Math.min(Hd * .57, 620, Hd - y0 - (S.step === 4 ? 350 : S.step === 3 ? 268 : 268))); gap = clamp(Wd * .245, 210, 380); w = h * .70; if (w * 2 + gap > Wd - 80) { w = (Wd - 80 - gap) / 2; h = w / .7; } R.L = { cx: Wd / 2 - gap / 2 - w / 2, cy: y0 + h / 2, w, h }; R.R = { cx: Wd / 2 + gap / 2 + w / 2, cy: y0 + h / 2, w, h }; }
+  if (S.cover) { h = Hd * .80; w = h * .72; for (const s of 'LR') R[s] = { cx: Wd / 2 + (s === 'L' ? -1 : 1) * w * .70, cy: Hd / 2, w, h }; }
+  rect = R; S.dialW = ph ? S.phDial || 186 : Math.round(clamp(gap - w * .22, 150, 250)); const bottom = y0 + h; S.box = { y0, h, bottom };
+  for (const s of 'LR') { const r = R[s], b = $('w' + s); const gr = r.w * .085; b.style.cssText = `left:${r.cx - r.w / 2 - gr}px;top:${r.cy - r.h / 2 - gr}px;width:${r.w + gr * 2}px;height:${r.h + gr * 2}px`; const p = $('p' + s); p.style.left = r.cx + 'px'; p.style.top = (r.cy + r.h / 2 + (ph ? r.w * .10 : r.w * .115)) + 8 + 'px'; }
+  if (!ph) $('aisle').style.display = ''; const head = $('head'); if (land) { head.style.cssText = `top:${top - 4}px;`; } else head.style.cssText = ph ? `top:${top + 2}px` : `top:${top + Math.max(0, (y0 - top - (ph ? 80 : 92)) / 2)}px`;
+  const a = $('aisle'); if (land) { a.style.left = Wd / 2 + 'px'; a.style.top = Hd / 2 + 'px'; a.style.opacity = 1; } else if (ph) { a.style.left = Wd / 2 + 'px'; a.style.top = (S.step === 3 ? bottom + 84 + S.dialW / 2 + 10 : Hd - 92) + 'px'; a.style.display = S.step === 4 ? 'none' : ''; a.style.opacity = S.step < 3 && Math.abs(fl - fr) > .03 ? 0 : 1; } else { a.style.left = Wd / 2 + 'px'; a.style.top = y0 + h / 2 + 'px'; a.style.opacity = 1; }
+  const f = $('foot'); f.hidden = tool; const pl = (S.step === 3 ? 50 : S.step === 4 ? (ph ? 110 : 108) : 34); if (land) f.style.cssText = `top:auto;bottom:6px;width:${Math.max(220, Wd - 2 * w - 80)}px`; else f.style.cssText = ph ? (S.step === 3 ? `top:auto;bottom:8px` : `top:${bottom + pl + 26}px`) : `top:${bottom + pl + (Hd < 760 ? 14 : 28)}px`;
+  const q = $('tool'); if (tool) { if (ph) { q.style.cssText = `left:0;right:0;top:${bottom + 52}px;bottom:0;padding:0 20px 24px`; } else { const x = R.R.cx + R.R.w / 2 + Math.max(44, Wd * .045); q.style.cssText = `left:${x}px;right:${Math.max(32, Wd * .04)}px;top:${top + 16}px;bottom:10px;padding-right:8px`; const inner = q.firstElementChild; if (inner) { const free = q.clientHeight - inner.offsetHeight; inner.style.marginTop = Math.max(0, free / 2 - 14) + 'px'; } } }
+}
+function resize() { layout(); const cap = phone() ? 2 : 2; dpr = Math.min(devicePixelRatio || 1, cap) * scale; cv.width = Math.round(Wd * dpr); cv.height = Math.round(Hd * dpr); }
+addEventListener('resize', () => { resize(); place(); }); addEventListener('orientationchange', () => setTimeout(() => { resize(); place(); }, 250));
+
+// ---------- light ----------
+function sunNow(kind) { // real sun of today at a moment of the day, or a fixed October late afternoon for the story
+  if (kind === 'story') return { az: 236, app: 25 };
+  const n = nyNow(), at = m => sunAt(n.y, n.n, m), alt = m => at(m).app; let rise = 0, set = 0; for (let m = 180; m < 720; m += 2) if (alt(m) < 0 && alt(m + 2) >= 0) rise = m; for (let m = 720; m < 1320; m += 2) if (alt(m) >= 0 && alt(m + 2) < 0) set = m;
+  return at({ morning: rise + 110, noon: (rise + set) / 2, evening: set - 45, night: set + 75 }[kind]); }
+const litCache = {}; function env(kind) { const s = litCache[kind] || (litCache[kind] = sunNow(kind)); return light(s.az, s.app, performance.now() / 1000); }
+
+// ---------- gaze: where a passenger on this side would look ----------
+const aimAt = (p, side, x, y, z) => { const c = seatCamera(p, side), d = Math.hypot(x - p.x, y - p.y), v = V.norm([x - p.x, y - p.y, z - p.z - d * d / 14864000]), k = side === 'L' ? -1 : 1; return { yaw: Math.atan2(V.dot(v, c.body.F), V.dot(v, c.body.R) * k) * 57.2958, tilt: Math.asin(clamp(V.dot(v, c.body.U), -1, 1)) * 57.2958, d }; };
+function gaze(side, p, dt) {
+  const lk = S.look[side], s = side === 'L' ? -1 : 1; let best = null, yaw, tilt, fov = 31;
+  const gm = S.game && S.game.id && S.game.side === side ? LM[S.game.id] : null;
+  if (gm) { const a = aimAt(p, side, gm.x, gm.y, gm.z + gm.top * .5); fov = clamp(gm.top / a.d * 57.3 * 7, 8, 31); yaw = a.yaw + (S.game.i % 2 ? 1 : -1) * fov * .16; tilt = a.tilt + fov * .06; }
+  else {
+    for (const k of ['esb', 'wtc', 'cpt']) { const m = LM[k], r = E.relBearing(p, m.x, m.y), d = Math.hypot(m.x - p.x, m.y - p.y); if (Math.sign(r) !== s || Math.abs(r) < 30 || Math.abs(r) > 150 || d > 32000) continue; if (!best) best = { x: 0, y: 0, n: 0, d }; best.x += m.x; best.y += m.y; best.n++; best.d = Math.min(best.d, d); }
+    if (best) { const a = aimAt(p, side, best.x / best.n, best.y / best.n, 130); fov = clamp(168 / (best.d / 1000), 11.5, 30); yaw = a.yaw; tilt = a.tilt - fov * .035; }
+    else { const h = p.h / 57.2958, x = p.x + Math.cos(h) * s * 12000, y = p.y - Math.sin(h) * s * 12000; const a = aimAt(p, side, x, y, 0); yaw = 0; tilt = a.tilt - fov * (p.z > 250 ? .2 : .1); }
+    if (S.tr && S.labels && (!best || best.d > 15000)) { let top = null; for (const v of E.visibleAt(S.data, S.tr, side, S.sec)) { const m = LM[v.id], d = Math.hypot(m.x - p.x, m.y - p.y); if (d < 4200 && (!top || RANK[v.id] > RANK[top.id])) top = { id: v.id, d, m }; } if (top) { const a = aimAt(p, side, top.m.x, top.m.y, top.m.z + top.m.top * .6); yaw = mix(yaw, a.yaw, .75); tilt = mix(tilt, a.tilt, .75); fov = mix(fov, 31, .75); } }
+  }
+  yaw = clamp(yaw, -55, 57); tilt = clamp(tilt, -30, 18);
+  const k = 1 - Math.exp(-dt * (S.speed > 20 ? 6 : 3)); lk.yaw += (yaw - lk.yaw) * k; lk.fov += (fov - lk.fov) * k; lk.tilt += (tilt - lk.tilt) * k;
+  if (!lk.drag && S.speed > 0 && S.step < 5) { const b = 1 - Math.exp(-dt * .5); lk.uy -= lk.uy * b; lk.ut -= lk.ut * b; }
+}
+function snapGaze() { if (!S.tr) return; const p = E.pose(S.tr, S.sec), sp = S.speed; for (const s of 'LR') { S.look[s].uy = S.look[s].ut = 0; S.look[s].uz = 1; gaze(s, p, 10); } S.speed = sp; }
+function camera(side, p) { const lk = S.look[side], r = rect[side]; const fov = clamp(lk.fov * lk.uz, 6, 46); return seatCamera(p, side, clamp(lk.yaw + lk.uy, -60, 62), clamp(lk.tilt + lk.ut, -38, 24), fov, r.w / r.h, wing().wy); }
+
+const ROWS = { f: { x: -9, z: -2.5, fov: 33, wy: -24 }, o: { x: -3.6, z: -1.9, fov: 33, wy: -9 }, b: { x: 4.2, z: -1.9, fov: 33, wy: 22 } }; const wing = () => S.step === 5 ? ROWS[S.tool.r] : ROWS.f;
+// ---------- frame ----------
+let last = 0, skyCol = { L: [.7, .8, .9], R: [.7, .8, .9] }, frames = 0, acc = 0;
+function frame(now) {
+  requestAnimationFrame(frame); const dt = Math.min(.05, (now - last) / 1000 || .016); last = now;
+  if (dt > 0 && world?.full) { acc += dt; frames++; if (frames === 40) { const ms = acc / frames * 1000; frames = acc = 0; if (ms > 30 && scale > .55 && (S.open.L > .5 || S.open.R > .5)) { slow++; if (slow > 1) { scale = Math.max(.5, scale * .8); world.low = true; resize(); slow = 0; } } else slow = 0; } }
+  // motion
+  let moved = false; for (const s of 'LR') { const o = S.open[s], w = S.want[s], n = still ? w : o + clamp(w - o, -dt * 1.7, dt * 1.7); S.open[s] = n; S.hover[s] *= .9; }
+  if (phone() && S.step < 5) { const f = s => S.step === 3 || S.step === 4 ? 1 : S.want[s] > 0 || (!S.want.L && !S.want.R) ? 1 : 0; let ch = false; for (const s of 'LR') { const w = S.both ? 1 : f(s), o = S.focusW[s]; if (Math.abs(w - o) > .004) { S.focusW[s] = o + (w - o) * Math.min(1, dt * 5); ch = true; } } if (ch) { layout(); } }
+  if (S.tr && S.speed && !S.hold) { const end = S.until; let sp = S.speed; if (S.tr.k === 'A' && S.speed > 4 && S.speed < 20) { const left = S.tr.T - S.sec; sp *= clamp(.34 + left / 60, .34, 1); } S.sec += dt * sp; if (S.loop && S.sec > S.loop[1]) S.sec = S.loop[0]; if (!S.loop && S.sec >= end) { S.sec = end; S.speed = 0; const d = S.done; S.done = null; d && d(); } ui(); }
+  S.dark += ((isDark() ? 1 : 0) - S.dark) * Math.min(1, dt * 6);
+  draw(dt);
+}
+function draw(dt) {
+  if (!gl) return; const en = env(S.lit || 'story'), p = S.tr ? E.pose(S.tr, S.sec) : null; gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.clearColor(0, 0, 0, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+  const cams = {}; for (const s of 'LR') { skyCol[s] = en.haze; if (!p || !world) continue; gaze(s, p, dt); const r = rect[s]; if (S.open[s] < .01 || !r.w) continue; const cam = cams[s] = camera(s, p); const x = (r.cx - r.w / 2 - r.w * .0) * dpr, y = (Hd - r.cy - r.h / 2) * dpr; world.draw(cam, [Math.round(x), Math.round(y), Math.round(r.w * dpr), Math.round(r.h * dpr)], en, { wing: wing(), low: world.low }); }
+  for (const s of 'LR') { const on = p && S.open[s] > .4 && cityIn(s, p, cams[s]); S.glow[s] += ((on ? 1 : 0) - S.glow[s]) * Math.min(1, dt * 3); }
+  cabin.draw(Wd, Hd, dpr, 'LR'.split('').map(s => ({ ...rect[s], open: ease(S.open[s]), glow: S.glow[s], hover: S.hover[s], sky: skyCol[s] })), { dark: S.dark, t: performance.now() / 1000, warm: [1, .70, .28] });
+  S.cams = cams; labels(cams, p);
+}
+const ease = x => x * x * (3 - 2 * x);
+function cityIn(side, p, cam) { if (cam) { for (const k of ['esb', 'wtc', 'cpt']) { const m = LM[k], q = project(cam, [m.x, m.y, m.z + m.top * .8]); if (q.z > 0 && q.z < 32000 && Math.abs(q.x) < 1.05 && Math.abs(q.y) < 1) return true; } } const s = side === 'L' ? -1 : 1; for (const k of ['esb', 'wtc', 'cpt']) { const r = E.relBearing(p, LM[k].x, LM[k].y), d = Math.hypot(LM[k].x - p.x, LM[k].y - p.y); if (Math.sign(r) === s && Math.abs(r) >= 35 && Math.abs(r) <= 145 && d < 30000) return true; } return false; }
+// names in the window: at most two, never on top of each other
+const pool = []; function labels(cams, p) {
+  const out = []; if (p && S.labels && S.tr) for (const s of 'LR') { const cam = cams[s]; if (!cam || S.open[s] < .9 || rect[s].w < 120) continue; const r = rect[s], vis = E.visibleAt(S.data, S.tr, s, S.sec); const c = []; for (const v of vis) { const m = LM[v.id]; if (S.game && !S.game.shown.has(v.id)) continue; const q = project(cam, [m.x, m.y, m.z + m.top]); if (q.z < 0 || Math.abs(q.x) > .80 || q.y < -.75 || q.y > .55) continue; c.push({ id: v.id, x: r.cx + q.x * r.w / 2, y: r.cy - q.y * r.h / 2, km: Math.hypot(m.x - p.x, m.y - p.y) / 1000, rk: RANK[v.id] + (v.id === S.lastLab?.[s] ? 1.5 : 0) }); } c.sort((a, b) => b.rk - a.rk); const used = []; for (const l of c) { if (used.length >= (r.w > 230 ? 2 : 1)) break; if (used.some(u => Math.abs(u.x - l.x) < 120)) continue; l.lift = 30 + used.length * 24; used.push(l); } if (used[0]) (S.lastLab = S.lastLab || {})[s] = used[0].id; for (const u of used) out.push({ ...u, r }); }
+  while (pool.length < out.length) { const d = document.createElement('div'); d.append(document.createElement('span'), document.createElement('i')); $('labels').append(d); pool.push(d); }
+  pool.forEach((d, i) => { const l = out[i]; if (!l) { d.style.opacity = 0; return; } d.style.opacity = 1; const name = lmName(l.id); if (d.firstChild.textContent !== name) d.firstChild.textContent = name; const hw = d.offsetWidth / 2 + 14, x = clamp(l.x, l.r.cx - l.r.w / 2 + hw, l.r.cx + l.r.w / 2 - hw); d.style.left = x + 'px'; d.style.top = l.y - l.lift + 'px'; d.lastChild.style.height = l.lift - 4 + 'px'; d.lastChild.style.left = `calc(50% + ${l.x - x}px)`; });
+}
+
+// ---------- words ----------
+const mmss = s => { s = Math.max(0, Math.round(s)); return lang === 'zh' ? (s >= 60 ? `${Math.floor(s / 60)} 分${s % 60 ? ' ' + s % 60 + ' 秒' : '钟'}` : s + ' 秒') : (s >= 60 ? `${Math.floor(s / 60)} min${s % 60 ? ' ' + s % 60 + ' s' : ''}` : s + ' s'); };
+const about10 = s => mmss(Math.round(s / 10) * 10);
+const say = (h, q) => { const b = /^<b>(.*)<\/b>$/.exec(h || ''); $('say').innerHTML = h ? (b ? `<b>${cl(b[1])}</b>` : h) + (q ? `<span class="q">${cl(q)}</span>` : '') : ''; };
+const cl = s => lang === 'zh' ? String(s).split(/(?<=[，。：？！])/).map(m => `<span class="cl">${m}</span>`).join('') : String(s).split(/(?<=[.?!,])\s/).map(m => `<span class="cl">${m}</span>`).join(' ');
+const head = (h, p) => { $('h').innerHTML = cl(h); $('p').innerHTML = cl(p || ''); };
+const go = (...b) => { const g = $('go'); g.textContent = ''; for (const x of b) { if (!x) continue; const e = document.createElement('button'); e.className = x.cls || 'btn'; e.textContent = x.t; e.onclick = x.f; g.append(e); } };
+function plate(s, html) { $('p' + s).innerHTML = html; }
+function plates(mode) { for (const s of 'LR') plate(s, `<b>${s === 'L' ? t().seatL : t().seatR}</b>`); }
+function place() { layout(); }
+
+// ---------- flying ----------
+function fly(tr, from, to, speed) { S.tr = tr; S.sec = from; S.until = to; S.speed = speed; S.loop = null; S.hold = false; snapGaze(); return new Promise(r => S.done = r); }
+function loop(tr, a, b, speed, at) { S.tr = tr; S.sec = at ?? a; S.loop = [a, b]; S.speed = speed; S.done = null; snapGaze(); }
+const ew = (dir, g = 'W') => E.track(S.data, 'A', 'EWR', dir, g);
+let uiLast = ''; function ui() { const bar = $('bar'); const on = S.flying && S.tr; bar.classList.toggle('on', !!on); if (!on) return; const a = S.from, b = S.until, k = clamp((S.sec - a) / (b - a), 0, 1); $('fill').style.width = k * 100 + '%'; $('pl').style.left = k * 100 + '%'; const left = Math.ceil((b - S.sec) / 10) * 10; const s = S.tr.k === 'A' ? fmt(t().toLand, { t: mmss(left) }) : fmt(t().sinceOff, { t: mmss(S.sec - a) }); if (S.step <= 2 && S.flying === 1) { if (s !== uiLast) { uiLast = s; $('say').textContent = s; } } }
+const bar = $('bar'); let dragBar = false; const setBar = e => { const r = bar.getBoundingClientRect(); S.sec = mix(S.from, S.until, clamp((e.clientX - r.left) / r.width, 0, .995)); if (!S.speed && S.tr) S.speed = S.sp || 0; snapGaze(); }; bar.addEventListener('pointerdown', e => { if (!S.flying) return; dragBar = true; bar.setPointerCapture(e.pointerId); S.hold = true; setBar(e); }); bar.addEventListener('pointermove', e => dragBar && setBar(e)); bar.addEventListener('pointerup', () => { dragBar = false; S.hold = false; }); bar.addEventListener('pointercancel', () => { dragBar = false; S.hold = false; });
+
+// ---------- steps ----------
+function dots() { const d = $('dots'); d.innerHTML = ''; for (let i = 1; i <= 5; i++) { const l = document.createElement('li'); if (i < S.step) l.className = 'on'; if (i === S.step) l.className = 'now'; d.append(l); } }
+function setStep(n) { S.step = n; S.token++; S.flying = 0; S.loop = null; S.speed = 0; S.done = null; S.both = false; S.pick = null; S.game = null; S.labels = true; S.hold = false; $('tool').hidden = n !== 5; $('foot').hidden = n === 5; $('head').hidden = n === 5; S.want.L = S.want.R = 0; $('aisle').innerHTML = ''; say(''); go(); bar.classList.remove('on'); S.lit = 'story'; dots(); resize(); ({ 1: step1, 2: step2, 3: step3, 4: () => step4(0), 5: step5 })[n](); layout(); if (n < 5) history.replaceState(null, '', location.pathname + location.search + '#s=' + n); }
+const skipBtn = () => ({ t: t().skip, cls: 'txt', f: () => setStep(5) });
+function step1() { head(t().s1h, t().s1p); plates(); S.tr = ew('22'); S.sec = S.tr.T - 228; snapGaze(); dial(200, false); go(skipBtn()); S.choose = s => guess(1, s); }
+function step2() { head(t().s2h, t().s2p); plates(); S.tr = ew('4'); S.sec = S.tr.T - 180; snapGaze(); dial(20, false); S.choose = s => guess(2, s); }
+async function guess(n, s) {
+  if (S.pick || !S.data) return; S.pick = s; $('p').textContent = ''; const tk = S.token, tr = n === 1 ? ew('22') : ew('4'), right = n === 1 ? 'L' : 'R', len = n === 1 ? 222 : 170; S.want[s] = 1; go({ t: t().skipLand, cls: 'txt', f: () => { S.sec = tr.T - 1; } }); S.flying = 1; S.from = tr.T - len; S.sp = n === 1 ? 12 : 11;
+  await fly(tr, tr.T - len, tr.T + 8, S.sp); if (tk !== S.token) return; S.flying = 0; ui(); go(); const o = s === 'L' ? 'R' : 'L';
+  const sec = E.cityTime(tr, right, LM).s; say(s === right ? fmt(n === 1 ? t().r1L : t().r2R, { t: about10(sec) }) : n === 1 ? t().r1R : t().r2L);
+  await wait(s === right ? 900 : 700); if (tk !== S.token) return;
+  // the same minutes again, both shades up
+  S.both = true; S.want.L = S.want.R = 1; S.flying = 2; S.from = tr.T - len; await fly(tr, tr.T - len + (n === 1 ? 10 : 60), tr.T - (n === 1 ? 45 : 8), 24); if (tk !== S.token) return; S.flying = 0; bar.classList.remove('on');
+  n === 1 ? loop(tr, tr.T - 175, tr.T - 70, 2, tr.T - 128) : loop(tr, tr.T - 88, tr.T - 48, 1.2, tr.T - 66);
+  $('aisle').firstElementChild?.classList.remove('bare'); head(n === 1 ? t().s1h : t().s2h, ''); say(`<b>${n === 1 ? t().w1 : t().w2}</b>`, n === 2 ? t().q2 : ''); if (n === 2) $('aisle').firstElementChild?.classList.add('pulse'); go({ t: n === 1 ? t().n1 : t().n2, f: () => setStep(n + 1) }); $('go').firstChild.focus({ preventScroll: true, focusVisible: false });
+}
+// ---- the wind
+const DIRS = [0, 45, 90, 135, 180, 225, 270, 315], near8 = w => DIRS[Math.round(((w % 360) + 360) % 360 / 45) % 8];
+function step3() { head(t().s3h, t().s3p); S.labels = false; S.seen = { L: 0, R: 0, W: 0 }; S.wind = 281; S.tDone = 0; S.say3 = ''; const d = dial(S.wind, true); S.want.L = S.want.R = 1; S.dir = null; S.done3 = false; setWind(S.wind, true); goals(); S.choose = null; }
+function goals() { if (S.done3) return; let g = $('goals'); if (!g) { g = document.createElement('div'); g.id = 'goals'; g.className = 'goals'; $('aisle').append(g); } g.innerHTML = `<span class="${S.seen.R ? 'ok' : ''}">${t().goalR}</span><span class="${S.seen.L ? 'ok' : ''}">${t().goalL}</span>`; }
+function setWind(w, init) {
+  S.wind = ((w % 360) + 360) % 360; drawDial(S.wind); const o = E.odds(S.data, 'A', 'EWR', S.wind), c = E.pct(o), dir = E.topDir(o.dirs);
+  for (const s of 'LR') plate(s, `<b>${s === 'L' ? t().pcL : t().pcR}</b><span class="big ${c[s] >= 50 ? 'hot' : ''}">${c[s]}%</span>`);
+  if (dir !== S.dir) { const first = !S.dir; S.dir = dir; swapTo(dir, first); }
+  if (!init && S.moved) { const win = dir === '4' ? 'R' : 'L'; if (Math.max(c.L, c.R) >= 90) S.seen[win] = 1; goals(); if (S.seen.L && S.seen.R && !S.done3) { S.done3 = true; S.tDone = performance.now(); head(t().s3h, ''); $('goals')?.remove(); go({ t: t().n3, f: () => setStep(4) }); } if (S.done3) say3(c); }
+}
+// the rule first, and for at least 3 seconds; "no promise" only while the wind is really undecided
+function say3(c) { const even = c.L >= 15 && c.R >= 15, early = performance.now() - S.tDone < 3000, k = even && !early ? 'c' : 'r'; if (k === S.say3) return; S.say3 = k; if (k === 'c') { S.seen.W = 2; say(`<b>${t().w3c}</b>`); } else say(`<b>${t().w3}</b>`, S.seen.W ? '' : t().w3b); if (early && even) setTimeout(() => { if (S.step === 3 && S.done3) say3(E.pct(E.odds(S.data, 'A', 'EWR', S.wind))); }, 3100); }
+async function swapTo(dir, first) { const tk = S.token, tr = ew(dir); const set = () => dir === '4' ? loop(tr, tr.T - 92, tr.T - 46, 1.4, tr.T - 72) : loop(tr, tr.T - 175, tr.T - 70, 2.2, tr.T - 135); if (first) return set(); S.want.L = S.want.R = 0; S.swap = dir; await wait(still ? 10 : 520); if (tk !== S.token || S.dir !== dir) { if (tk === S.token) S.want.L = S.want.R = 1; return; } set(); S.want.L = S.want.R = 1; }
+// dial: the airport and the city from above, wind on the ring
+const MAP = (() => { const M = [[-74.0175, 40.7035], [-74.0165, 40.7180], [-74.0095, 40.7420], [-73.9985, 40.7610], [-73.9680, 40.8050], [-73.9480, 40.8400], [-73.9330, 40.8690], [-73.9220, 40.8745], [-73.9110, 40.8720], [-73.9280, 40.8480], [-73.9350, 40.8230], [-73.9290, 40.7990], [-73.9410, 40.7800], [-73.9590, 40.7560], [-73.9720, 40.7330], [-73.9750, 40.7130], [-73.9960, 40.7080], [-74.0120, 40.7010]]; const f = ([lo, la]) => [(lo + 74.085) * 84.3 * 6.2, -(la - 40.745) * 111.1 * 6.2]; return { city: M.map(f), rw: [f([-74.1764, 40.6800]), f([-74.1620, 40.7000])] }; })();
+function dial(w, live) {
+  const a = $('aisle'), R = 104; a.innerHTML = `<svg class="dial ${live ? 'live' : 'bare'} ${live ? 'hit' : ''}" width="${live ? S.dialW || 236 : phone() ? 116 : 150}" height="${live ? S.dialW || 236 : phone() ? 116 : 150}" viewBox="-132 -132 264 264" ${live ? 'tabindex="0" role="slider" aria-valuemin="0" aria-valuemax="359"' : 'role="img"'} aria-label="${t().windToday}"><circle class="ring" r="${R}"/>${['N', 'E', 'S', 'W'].map((k, i) => `<text class="${live ? '' : 'sm'}" x="${[0, 123, 0, -123][i]}" y="${[-123, 0, 123, 0][i]}">${t().dir[i * 90].slice(0, lang === 'zh' ? 1 : 1).toUpperCase()}</text>`).join('')}<path class="city" d="M${MAP.city.map(p => p.map(v => v.toFixed(1)).join(' ')).join('L')}Z"/>${live ? `<text x="22" y="-34" style="fill:var(--warm);font-size:14px">${t().manh}</text><text x="-70" y="28" style="font-size:14px">${t().EWR}</text>` : ''}<line class="rw" x1="${MAP.rw[0][0]}" y1="${MAP.rw[0][1]}" x2="${MAP.rw[1][0]}" y2="${MAP.rw[1][1]}"/><g id="ap"><line class="path" x1="0" y1="16" x2="0" y2="46"/><path class="pl" d="M0 54 l2.6 5 v6 l11 8 v3 l-11 -3.4 v7.4 l4 3 v2.4 l-6.6 -1.8 l-6.6 1.8 v-2.4 l4 -3 v-7.4 l-11 3.4 v-3 l11 -8 v-6z"/></g><g id="wd"><path class="gust" d="M-9 -${R - 12} v30 M0 -${R - 16} v40 M9 -${R - 12} v30"/><circle class="knob" cy="-${R}" r="${live ? 13 : 6}"/></g>${live ? `<circle r="${R + 26}" fill="transparent"/>` : ''}</svg><p class="wl" id="wl"></p>`;
+  drawDial(w); const sv = a.firstElementChild; if (live) { const set = e => { const r = sv.getBoundingClientRect(); S.moved = true; setWind(Math.atan2(e.clientX - r.left - r.width / 2, -(e.clientY - r.top - r.height / 2)) * 57.2958); }; let d = false; sv.addEventListener('pointerdown', e => { d = true; sv.setPointerCapture(e.pointerId); set(e); }); sv.addEventListener('pointermove', e => d && set(e)); for (const n of ['pointerup', 'pointercancel']) sv.addEventListener(n, () => d = false); sv.addEventListener('focus', () => sv.classList.remove('kb')); sv.addEventListener('keyup', () => sv.classList.add('kb')); sv.addEventListener('keydown', e => { const k = { ArrowRight: 15, ArrowUp: 15, ArrowLeft: -15, ArrowDown: -15 }[e.key]; if (k) { e.preventDefault(); S.moved = true; setWind(S.wind + k); } }); } return sv;
+}
+function drawDial(w) { const g = $('wd'); if (!g) return; g.setAttribute('transform', `rotate(${w})`); const o = E.shares(S.data || { share: { EWR: { A: {} } } }, 'A', 'EWR', w), dir = E.topDir(o), c = MAP.rw, mx = (c[0][0] + c[1][0]) / 2, my = (c[0][1] + c[1][1]) / 2; const ang = Math.atan2(c[1][0] - c[0][0], -(c[1][1] - c[0][1])) * 57.2958; $('ap').setAttribute('transform', `translate(${mx} ${my}) rotate(${dir === '22' ? ang + 180 + 0 : ang})`); $('wl').innerHTML = `${S.step < 3 ? t().windToday + (lang === 'zh' ? '：' : ': ') : ''}<b>${fmt(t().from, { d: t().dir[near8(w)] })}</b>`; const s = g.ownerSVGElement; s.setAttribute('aria-valuenow', Math.round(w)); s.setAttribute('aria-valuetext', fmt(t().from, { d: t().dir[near8(w)] })); }
+// ---- book without knowing the wind
+const ROUNDS = [['A', 'EWR'], ['D', 'EWR'], ['A', 'JFK'], ['A', 'LGA']];
+function step4(i = 0) {
+  const [k, ap] = ROUNDS[i]; S.bk = i; S.pick = null; S.want.L = S.want.R = 0; S.both = false; S.labels = false; S.loop = null; S.speed = 0; head(i ? t()['bk' + i] : t().s4h, i ? '' : t().s4p); say(''); go(); for (const s of 'LR') plate(s, `<b>${s === 'L' ? t().seatL : t().seatR}</b><div class="pile ${s}"></div>`); $('aisle').innerHTML = `<p class="wl" style="font-size:22px;font-weight:300;color:var(--ink);margin:0">${t()[ap]}<br><span style="font-size:15px;color:var(--soft)">${t()['noun' + k]}</span></p>`; S.choose = book; S.tr = k === 'D' ? E.track(S.data, 'D', 'EWR', '4', 'W') : E.track(S.data, 'A', ap, ap === 'LGA' ? '31' : '22'); }
+async function book(s) {
+  if (S.pick) return; S.pick = s; const tk = S.token, i = S.bk, [k, ap] = ROUNDS[i], c = E.pct(E.odds(S.data, k, ap)); S.hover[s] = 1; const seq = [...Array(c.L).fill('L'), ...Array(c.R).fill('R'), ...Array(c.O).fill('O')]; let seed = 7; for (let i = seq.length - 1; i > 0; i--) { seed = (seed * 16807) % 2147483647; const j = seed % (i + 1);[seq[i], seq[j]] = [seq[j], seq[i]]; }
+  const pile = { L: document.querySelector('.pile.L'), R: document.querySelector('.pile.R') }; let n = 0;
+  for (const q of seq) { if (tk !== S.token) return; n++; if (q !== 'O') pile[q].append(document.createElement('i')); $('say').textContent = `${n} / 100`; if (n % 2 === 0 && !still) await wait(30); } if (tk !== S.token) return;
+  const win = c.L >= c.R ? 'L' : 'R'; S.booked[k + ap] = c[s]; S.want[win] = 1; S.both = true; const tr = S.tr; const bm = bestMoment(tr, win); loop(tr, Math.max(0, bm - 24), Math.min(tr.T, bm + 34), 1.6, bm);
+  const f = { L: `<b>${c.L}</b>`, R: `<b>${c.R}</b>`, O: `<b>${c.O}</b>` }, total = Math.round(Object.values(S.data.arr.EWR).reduce((a, v) => a + v, 0) / 1e4), sum = Object.values(S.booked).reduce((a, b) => a + b, 0), max = ROUNDS.reduce((a, [kk, q]) => { const z = E.pct(E.odds(S.data, kk, q)); return a + Math.max(z.L, z.R); }, 0);
+  say(`${s === win ? t().s4ok : t().s4no} ` + fmt([t().s4r, t().rD, t().rJFK, t().rLGA][i], f), [fmt(t().w4, { n: lang === 'zh' ? total + ' 万' : total * 10 + ',000' }), t().wD, '', fmt(t().score, { n: sum, m: max })][i]); $('say').querySelector('.q')?.style.setProperty('color', 'var(--soft)');
+  go(i < 3 ? { t: t()['nb' + (i + 1)], f: () => { S.token++; step4(i + 1); layout(); } } : { t: t().n4, f: () => setStep(5) });
+}
+// ---- the tool
+function step5() { S.want.L = S.want.R = 1; S.both = true; S.choose = null; for (const s of 'LR') plate(s, `<b>${s === 'L' ? t().left : t().right}</b>`); tool(true); }
+const TO = { ap: ['EWR', 'JFK', 'LGA'], k: ['A', 'D'], w: [null, 0, 45, 90, 135, 180, 225, 270, 315, 'calm'], g: [null, 'N', 'E', 'S', 'W'], r: ['f', 'o', 'b'], d: ['morning', 'noon', 'evening', 'night'] };
+const word = { ap: v => t()[v], k: v => t()[v], w: v => v === null ? t().windNone : v === 'calm' ? t().windCalm : t().dirW[v], g: v => v === null ? t()['any' + S.tool.k] : t().gA[v], r: v => t().row[v], d: v => t()[v] }, long = { ...word, g: v => v === null ? t()['any' + S.tool.k] : t().gAx[v] };
+function answer() { const q = S.tool, o = E.odds(S.data, q.k, q.ap, q.w, q.g), c = E.pct(o); let a = c.O >= 50 && c.O > c.L && c.O > c.R ? 'N' : Math.abs(c.L - c.R) <= 8 ? 'B' : c.L > c.R ? 'L' : 'R'; const side = c.L >= c.R ? 'L' : 'R';
+  // a typical flight that goes with the answer
+  const dirs = Object.keys(o.dirs).sort((x, y) => o.dirs[y] - o.dirs[x]); let tr = null; if (a === 'N') tr = E.track(S.data, q.k, q.ap, dirs[0], q.g); else { const tot = {}; for (const x of S.data.tracks) if (x.k === q.k && x.ap === q.ap && (!q.g || x.g === q.g)) tot[x.dir] = (tot[x.dir] || 0) + x.n; const wt = x => (o.dirs[x.dir] || 0) * x.n / tot[x.dir]; tr = S.data.tracks.filter(x => x.k === q.k && x.ap === q.ap && x.side === side && (!q.g || x.g === q.g)).sort((x, y) => wt(y) - wt(x))[0]; } if (!tr) tr = E.track(S.data, q.k, q.ap, dirs[0], q.g) || E.track(S.data, q.k, q.ap, dirs[0]); return { c, a, side, tr, o }; }
+function board() { const cell = (k, ap) => { const c = E.pct(E.odds(S.data, k, ap)), s = c.L > c.R ? 'L' : 'R'; return `<td><b>${s === 'L' ? t().left : t().right}</b> <i>${c[s]}</i></td>`; }; return `<table class="board"><thead><tr><th></th><th scope="col">${t().nounA}</th><th scope="col">${t().nounD}</th></tr></thead><tbody>${['LGA', 'JFK', 'EWR'].map(ap => `<tr><th scope="row">${t()[ap]}</th>${cell('A', ap)}${cell('D', ap)}</tr>`).join('')}</tbody></table><p class="note">${t().s5n}</p>`; }
+function tool(restart) {
+  const q = S.tool, r = S.res = answer(), { c, a, side, tr } = r; S.lit = q.d;
+  const w = (id) => `<button class="word" data-w="${id}" aria-haspopup="menu" aria-expanded="false">${word[id](q[id])}</button>`;
+  const ask = lang === 'zh' ? `${t().sayA}${w('k')}${w('ap')}，${w('w')}，${q.g ? (q.k === 'A' ? '从' : '飞往') : ''}${w('g')}${q.k === 'A' && q.g ? '来' : ''}，${w('d')}，坐${w('r')}。` : `I’m ${w('k')} ${w('ap')}, ${q.w === null || q.w === 'calm' ? '' : 'with a '}${w('w')}, ${q.k === 'A' ? 'coming from' : 'heading to'} ${w('g')}, ${q.d === 'noon' ? 'around' : q.d === 'night' ? 'after' : 'in the'} ${w('d')}, sitting ${w('r')}.`;
+  const ps = passList(tr, side); const line = { L: t().ansL, R: t().ansR, N: t().ansN, B: t().ansB }[a];
+  $('tool').innerHTML = `<div>${board()}<p class="rule">${t().s5w}</p><p class="ask">${ask}</p><p class="ans">${line}</p><p class="odds">${fmt(t().oddsN, { L: c.L, R: c.R, o: c.O ? fmt(t().oddsO, { O: c.O }) : '' })}${a === 'N' ? ' ' + t().aheadNote : ''}</p><p class="note">${t().tip.replace('{when}', t().when[q.k])}</p><div class="row"><button class="btn" id="b-play">${t().play}</button><button class="txt" id="b-game" ${ps.filter(p => p.b - p.a > 16 && LM[p.id].top / p.km > 11).length < 2 ? 'disabled' : ''}>${t().game}</button><button class="txt" id="b-save">${t().save}</button><button class="txt" id="b-link">${t().link}</button><button class="txt" id="b-about">${t().about}</button><button class="txt" id="b-again">${t().again}</button></div>${ps.length ? `<ol class="see" aria-label="${fmt(t().see, { s: side === 'L' ? t().left : t().right })}"><li class="hd">${fmt(t().see, { s: side === 'L' ? t().left : t().right })}<span>${t()['hd' + q.k]}</span></li>${ps.map(p => `<li><span>${whenS(tr, p)}</span><span>${lmName(p.id)}</span><span>${fmt(t().km, { n: p.km < 10 ? p.km.toFixed(1) : Math.round(p.km) })}</span></li>`).join('')}</ol>` : `<p class="note">${t().seeNone}</p>`}</div>`;
+  for (const b of $('tool').querySelectorAll('.word')) b.onclick = () => menu(b, b.dataset.w);
+  $('b-play').onclick = playTool; $('b-save').onclick = saveCard; $('b-link').onclick = copyLink; $('b-about').onclick = about; $('b-again').onclick = () => { S.booked = {}; setStep(1); }; $('b-game').onclick = game;
+  const h = new URLSearchParams({ ap: q.ap, k: q.k, w: q.w ?? 'any', g: q.g ?? 'any', d: q.d, r: q.r }); history.replaceState(null, '', location.pathname + location.search + '#' + h); S.game = null;
+  if (restart) idle(); layout();
+}
+const whenS = (tr, p) => mmss(Math.round((tr.k === 'A' ? tr.T - p.a : p.a) / 10) * 10);
+const when = (tr, p) => tr.k === 'A' ? fmt(t().toLand, { t: whenS(tr, p) }) : fmt(t().sinceOff, { t: whenS(tr, p) });
+function passList(tr, side) { const all = E.passes(S.data, tr, side).filter(p => p.id !== 'cpt' && p.id !== 'onevdb' && (tr.k === 'D' || tr.T - p.t > 8 || true)); const top = [...all].sort((a, b) => RANK[b.id] - RANK[a.id]).slice(0, !phone() && Hd < 960 ? 5 : 6); return all.filter(p => top.includes(p)).sort((a, b) => a.a - b.a); }
+function bestMoment(tr = S.res.tr, side = S.res.side) { let b = null; for (let i = 0; i < tr.T; i += 4) { const p = E.pose(tr, i); for (const k of ['esb', 'wtc']) { const r = Math.abs(E.relBearing(p, LM[k].x, LM[k].y)), d = Math.hypot(LM[k].x - p.x, LM[k].y - p.y), s = E.relBearing(p, LM[k].x, LM[k].y) < 0 ? 'L' : 'R'; if (s !== side || r < 45 || r > 135 || p.z < 60) continue; const v = d + Math.abs(r - 90) * 60 + Math.abs(p.bank) * 260; if (!b || v < b.v) b = { v, i }; } } return b ? b.i : tr.k === 'A' ? tr.T - 120 : 60; }
+function idle() { const { tr } = S.res, m = bestMoment(); S.flying = 0; loop(tr, Math.max(0, m - 30), Math.min(tr.T, m + 40), 1.6, m - 8 > 0 ? m - 8 : m); const b = $('b-play'); if (b) b.textContent = t().play; }
+async function playTool() { const b = $('b-play'); if (S.playing) { S.hold = !S.hold; b.textContent = S.hold ? t().play : t().pause; return; } const { tr } = S.res, tk = ++S.token; S.playing = true; b.textContent = t().pause; const len = Math.min(tr.T, 330), a = tr.k === 'A' ? tr.T - len : 0, z = tr.k === 'A' ? tr.T + 6 : Math.min(tr.T - 2, len); await fly(tr, a, z, 12); S.playing = false; if (tk === S.token && S.step === 5) { await wait(900); if (tk === S.token && S.step === 5 && !S.game) { idle(); $('b-play').textContent = t().replay; } } }
+let openMenu = null; function menu(b, id) { closeMenu(); const m = document.createElement('div'); m.className = 'menu'; m.setAttribute('role', 'menu'); for (const v of TO[id]) { const x = document.createElement('button'); x.setAttribute('role', 'menuitemradio'); x.setAttribute('aria-checked', String(S.tool[id] === v)); x.textContent = long[id](v); x.onclick = () => { closeMenu(); S.token++; S.playing = false; S.tool[id] = v; tool(true); $('tool').querySelector(`[data-w=${id}]`)?.focus(); }; m.append(x); } document.body.append(m); const r = b.getBoundingClientRect(); m.style.left = clamp(r.left, 12, innerWidth - m.offsetWidth - 12) + 'px'; m.style.top = (r.bottom + 6 + m.offsetHeight > innerHeight - 8 ? Math.max(8, r.top - 6 - m.offsetHeight) : r.bottom + 6) + 'px'; b.setAttribute('aria-expanded', 'true'); openMenu = { m, b }; (m.querySelector('[aria-checked=true]') || m.firstChild).focus(); m.onkeydown = e => { const L = [...m.children], i = L.indexOf(document.activeElement); if (e.key === 'ArrowDown') { e.preventDefault(); L[(i + 1) % L.length].focus(); } if (e.key === 'ArrowUp') { e.preventDefault(); L[(i + L.length - 1) % L.length].focus(); } if (e.key === 'Escape') { closeMenu(); b.focus(); } }; }
+function closeMenu() { if (openMenu) { openMenu.m.remove(); openMenu.b.setAttribute('aria-expanded', 'false'); openMenu = null; } } addEventListener('pointerdown', e => { if (openMenu && !openMenu.m.contains(e.target) && e.target !== openMenu.b) closeMenu(); }, true);
+async function copyLink() { const b = $('b-link'); try { await navigator.clipboard.writeText(location.href); } catch { const i = document.createElement('input'); i.value = location.href; document.body.append(i); i.select(); try { document.execCommand('copy'); } catch { } i.remove(); } b.textContent = t().copied; setTimeout(() => { b.textContent = t().link; }, 1600); }
+// ---- spotting practice
+function game() { const { tr, side } = S.res, list = passList(tr, side).filter(p => p.b - p.a > 16 && LM[p.id].top / p.km > 11); const ids = [...list].sort((a, b) => RANK[b.id] - RANK[a.id]).slice(0, 4).sort((a, b) => a.t - b.t); S.token++; S.playing = false; S.want[side === 'L' ? 'R' : 'L'] = 0; S.game = { side, ids, i: 0, n: 0, shown: new Set(), id: null }; nextSpot(); }
+function nextSpot() { const g = S.game, p = g.ids[g.i]; const { tr } = S.res; if (!p) { S.want.L = S.want.R = 1; const n = g.n, m = g.ids.length; toolSay(fmt(t().gEnd, { n, m }), [{ t: t().replay === 1 ? '' : t().gQuit === '' ? '' : t().close, f: () => { S.game = null; tool(true); } }]); S.game = { ...g, id: null }; idle(); return; } g.id = p.id; g.tries = 0; const a = Math.max(0, p.a - 4), b = Math.min(tr.T - 6, p.b); loop(tr, Math.max(a, p.t - 26), Math.max(a + 14, Math.min(b, p.t + 18)), 2.2); toolSay(fmt(t().g1, { x: lmName(p.id) }), [{ t: t().gQuit, f: () => { S.game = null; S.want.L = S.want.R = 1; tool(true); } }]); }
+function toolSay(msg, btns) { $('tool').innerHTML = `<div><h2>${msg}</h2><p class="note" id="gmsg">${S.game?.id ? t().gGo : ''}</p><div class="row"></div></div>`; const row = $('tool').querySelector('.row'); for (const b of btns) { const e = document.createElement('button'); e.className = b.cls || 'txt'; e.textContent = b.t; e.onclick = b.f; row.append(e); } layout(); }
+function spot(side, ex, ey) { const cam = S.cams?.[side]; if (!cam || !S.tr) return null; const r = rect[side], p = E.pose(S.tr, S.sec); let best = null; for (const v of E.visibleAt(S.data, S.tr, side, S.sec)) { const m = LM[v.id]; const a = project(cam, [m.x, m.y, m.z + m.top]), b = project(cam, [m.x, m.y, m.z]); if (a.z < 0) continue; const X = r.cx + a.x * r.w / 2, Y0 = r.cy - a.y * r.h / 2, Y1 = r.cy - b.y * r.h / 2, dy = ey < Y0 ? Y0 - ey : ey > Y1 ? ey - Y1 : 0, d = Math.hypot(ex - X, dy); if (d < 46 && (!best || d - RANK[v.id] < best.s)) best = { id: v.id, s: d - RANK[v.id], km: Math.hypot(m.x - p.x, m.y - p.y) / 1000 }; } return best; }
+function tapWindow(side, ex, ey) {
+  const g = S.game; if (g && g.id) { if (side !== g.side) return; const cam = S.cams?.[side], m = LM[g.id], q = cam && project(cam, [m.x, m.y, m.z + m.top * .6]), r = rect[side], p = E.pose(S.tr, S.sec), km = (Math.hypot(m.x - p.x, m.y - p.y) / 1000).toFixed(1); const hit = q && q.z > 0 && Math.hypot(r.cx + q.x * r.w / 2 - ex, r.cy - q.y * r.h / 2 - ey) < Math.max(40, r.w * .13); if (hit) { g.shown.add(g.id); if (!g.tries) g.n++; $('gmsg').textContent = fmt(t().gYes, { x: lmName(g.id), km }); const k = g.id; g.id = null; const tk = S.token; setTimeout(() => { if (S.game === g && tk === S.token) { g.i++; nextSpot(); } }, 2100); } else { g.tries++; const o = spot(side, ex, ey); const dx = q ? r.cx + q.x * r.w / 2 - ex : 0, dy = q ? r.cy - q.y * r.h / 2 - ey : 0, way = t()[Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'gRt' : 'gLt') : dy > 0 ? 'gDn' : 'gUp']; $('gmsg').textContent = (o && o.id !== g.id ? fmt(t().gNo, { x: lmName(o.id) }) + ' ' : '') + fmt(t().gMiss, { km, way }); if (g.tries >= 2) g.shown.add(g.id); } return; }
+  const o = spot(side, ex, ey); if (o && S.labels) { (S.lastLab = S.lastLab || {})[side] = o.id; }
+}
+// ---- card
+async function saveCard() {
+  const q = S.tool, { c, a, side, tr } = S.res, K = document.createElement('canvas'); K.width = 1200; K.height = 1600; const x = K.getContext('2d'), dk = isDark(), ink = dk ? '#e9eef4' : '#1f2a36', soft = dk ? '#a3b0bf' : '#4b5968'; x.fillStyle = dk ? '#10141b' : '#e4e9ee'; x.fillRect(0, 0, 1200, 1600);
+  const font = (w, s) => `${w} ${s}px Figtree,"PingFang SC","Noto Sans SC",sans-serif`; try { await document.fonts.load(font(300, 40)); } catch { }
+  // window picture, drawn fresh
+  const W = 620, H = 860, off = document.createElement('canvas'); if (world?.ready) { const keep = [cv.width, cv.height], ow = rect[side].w, oh = rect[side].h; const m = bestMoment(), os = S.sec; S.sec = m; snapGaze(); const p = E.pose(tr, m), lk = S.look[side]; const cam = seatCamera(p, side, lk.yaw, lk.tilt, lk.fov, W / H, wing().wy); cv.width = W; cv.height = H; world.draw(cam, [0, 0, W, H], env(S.lit), { wing: wing() }); off.width = W; off.height = H; off.getContext('2d').drawImage(cv, 0, 0); cv.width = keep[0]; cv.height = keep[1]; S.sec = os; resize(); }
+  const bx = 70, by = 200, rr = (px, py, w, h, r) => { x.beginPath(); x.roundRect(px, py, w, h, r); }; rr(bx - 26, by - 26, W * .78 + 52, H * .78 + 52, 235); x.fillStyle = dk ? '#1c232d' : '#f2f4f6'; x.fill(); rr(bx, by, W * .78, H * .78, 210); x.save(); x.clip(); if (off.width) x.drawImage(off, bx, by, W * .78, H * .78); else { x.fillStyle = '#8fb0cc'; x.fill(); } x.restore(); x.lineWidth = 10; x.strokeStyle = '#f0a93a'; rr(bx, by, W * .78, H * .78, 210); x.stroke();
+  const wrap = (s, px, py, mw, lh) => { const ch = lang === 'zh' ? [...s] : s.split(/(?<= )/); let l = ''; for (const w of ch) { if (x.measureText(l + w).width > mw && l) { x.fillText(l, px, py); py += lh; l = w; } else l += w; } x.fillText(l, px, py); return py + lh; };
+  x.fillStyle = soft; x.font = font(400, 30); x.fillText(t().card, 70, 110); x.textAlign = 'right'; x.fillText(`${t()[q.ap]} · ${t()[q.k].replace(/ (at|from)$/, '')}`, 1130, 110); x.textAlign = 'left';
+  let y = 260; x.fillStyle = dk ? '#f2b657' : '#9a5b00'; x.font = font(300, 64); y = wrap({ L: t().ansL, R: t().ansR, N: t().ansN, B: t().ansB }[a], 640, y, 500, 78); x.fillStyle = ink; x.font = font(400, 30); y = wrap(fmt(t().oddsN, { L: c.L, R: c.R, o: c.O ? fmt(t().oddsO, { O: c.O }) : '' }), 640, y + 16, 500, 44); x.fillStyle = soft; y = wrap([q.w === null ? t().windNone : word.w(q.w), q.g ? (q.k === 'A' ? t().comeFrom : t().goTo).replace(/^[，, ]+/, '') + ' ' + t().gA[q.g] : '', t()[q.d]].filter(Boolean).join(' · '), 640, y + 18, 500, 44);
+  y = 985; x.strokeStyle = dk ? '#344150' : '#b9c3cd'; x.lineWidth = 1.5; x.fillStyle = soft; x.font = font(400, 28); x.fillText(fmt(t().see, { s: side === 'L' ? t().left : t().right }), 70, y); y += 26; for (const p of passList(tr, side)) { x.beginPath(); x.moveTo(70, y); x.lineTo(1130, y); x.stroke(); y += 46; x.fillStyle = soft; x.font = font(400, 28); x.fillText(when(tr, p), 70, y); x.fillStyle = ink; x.font = font(500, 32); x.fillText(lmName(p.id), 420, y); x.fillStyle = soft; x.font = font(400, 28); x.textAlign = 'right'; x.fillText(fmt(t().km, { n: p.km < 10 ? p.km.toFixed(1) : Math.round(p.km) }), 1130, y); x.textAlign = 'left'; y += 20; }
+  x.fillStyle = ink; x.font = font(400, 30); x.fillText(`${t().s5h} ${t().s5h2}`, 70, 1508); x.fillStyle = soft; x.font = font(400, 24); x.fillText('yizhouyu.dev/demo/seat · ' + t().cardSrc, 70, 1556);
+  K.toBlob(b => { const u = URL.createObjectURL(b), l = document.createElement('a'); l.href = u; l.download = `seat-${q.ap}-${q.k === 'A' ? 'landing' : 'takeoff'}.png`; document.body.append(l); l.click(); l.remove(); S.saved = b.size; setTimeout(() => URL.revokeObjectURL(u), 4000); }, 'image/png');
+}
+function about() { const d = $('about'), st = S.data.stats; let nA = 0, nD = 0, x = 0, y = 0; for (const k in st) { const [kk, ap, rw] = k.split(' '); if (kk === 'A') nA += st[k].n; else nD += st[k].n; if (kk === 'A' && ap === 'EWR' && E.dirOf(rw) === '22') { x += st[k].n; y += st[k].L; } } const f = n => n.toLocaleString('en-US'); d.innerHTML = `<h2>${t().aboutH}</h2>${t().aboutT.map(p => `<p>${fmt(p, { nA: f(nA), nD: f(nD), x: f(x), y: f(y) })}</p>`).join('')}<form method="dialog"><button class="btn">${t().close}</button></form>`; d.showModal(); }
+
+// ---------- windows: open by tap or by pulling the shade; look around by dragging ----------
+for (const s of 'LR') { const b = $('w' + s); let st = null;
+  b.addEventListener('pointerdown', e => { st = { x: e.clientX, y: e.clientY, uy: S.look[s].uy, ut: S.look[s].ut, moved: false, id: e.pointerId, open: S.want[s] > .5 }; b.setPointerCapture(e.pointerId); });
+  b.addEventListener('pointermove', e => { S.hover[s] = 1; if (!st) return; const dx = e.clientX - st.x, dy = e.clientY - st.y; if (Math.hypot(dx, dy) > 7) st.moved = true; if (!st.moved) return; if (!st.open && S.choose && !S.pick) { if (dy < -14) { S.choose(s); st = null; } } else if (st.open) { const lk = S.look[s], k = lk.fov * lk.uz / rect[s].h; lk.drag = true; lk.uy = clamp(st.uy - dx * k * (s === 'L' ? -1 : 1) * -1 * -1, -60, 60); lk.uy = clamp(st.uy + dx * k * (s === 'L' ? -1 : 1), -60, 60); lk.ut = clamp(st.ut + dy * k, -25, 20); } });
+  b.addEventListener('pointerup', e => { S.look[s].drag = false; if (st && !st.moved) { if (S.choose && !S.pick) S.choose(s); else tapWindow(s, e.clientX, e.clientY); } st = null; S.tapped = performance.now(); });
+  b.addEventListener('pointercancel', () => { S.look[s].drag = false; st = null; });
+  b.addEventListener('click', e => { if (e.detail === 0 && S.choose && !S.pick) S.choose(s); });
+  b.addEventListener('wheel', e => { if (S.want[s] < .5) return; e.preventDefault(); S.look[s].uz = clamp(S.look[s].uz * Math.exp(e.deltaY * .0012), .4, 1.6); }, { passive: false }); }
+addEventListener('keydown', e => { if (e.target.closest?.('input,.menu,dialog,svg')) return; if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && S.choose && !S.pick) { e.preventDefault(); S.choose(e.key === 'ArrowLeft' ? 'L' : 'R'); } if (e.key === ' ' && S.step === 5 && e.target === document.body) { e.preventDefault(); playTool(); } });
+
+// ---------- chrome ----------
+function words() { root.lang = lang === 'zh' ? 'zh-Hans' : 'en'; document.title = t().title; $('lang').textContent = t().lang; $('home').textContent = t().all; $('light').setAttribute('aria-label', t().theme); $('light').title = t().theme; cv.setAttribute('aria-label', t().desc); for (const s of 'LR') $('w' + s).setAttribute('aria-label', (s === 'L' ? t().seatL : t().seatR) + ' · ' + t().tapWin); }
+$('lang').onclick = () => { lang = lang === 'zh' ? 'en' : 'zh'; store.set('lang', lang); words(); relabel(); };
+$('light').onclick = () => { root.dataset.theme = isDark() ? 'light' : 'dark'; store.set('theme', root.dataset.theme); };
+function relabel() { // same moment, other language
+  closeMenu(); const n = S.step; if (n === 5) { if (S.game) S.game = null; for (const s of 'LR') plate(s, `<b>${s === 'L' ? t().left : t().right}</b>`); tool(false); return; } if (n === 3) { const w = S.wind, seen = S.seen, d3 = S.done3; $('aisle').innerHTML = ''; head(t().s3h, d3 ? '' : t().s3p); dial(w, true); setWind(w, true); goals(); if (d3) { S.say3 = ''; say3(E.pct(E.odds(S.data, 'A', 'EWR', w))); go({ t: t().n3, f: () => setStep(4) }); } return; }
+  if (n === 4) { S.token++; step4(S.bk); return; } setStep(n); }
+
+// ---------- start ----------
+async function boot() {
+  words(); $('boot').textContent = t().load; resize();
+  gl = cv.getContext('webgl2', { antialias: true, alpha: false, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+  let data; try { data = await (await fetch('data/flights.json')).json(); } catch { $('boot').textContent = t().err; return; }
+  S.data = E.prepare(data);
+  if (!gl) { S.gl = false; document.body.classList.add('nogl'); cv.hidden = true; S.step = 5; readHash(); setStep(5); $('boot').textContent = t().noGL; return; }
+  cv.addEventListener('webglcontextlost', e => { e.preventDefault(); $('boot').textContent = t().err; $('boot').style.opacity = 1; });
+  cabin = new Cabin(gl); world = new World(gl); window.__world = world; resize(); const h = readHash(); requestAnimationFrame(frame); setStep(h);
+  try { await world.load('data/', () => { }); $('boot').style.opacity = 0; } catch (e) { console.warn(e); $('boot').textContent = t().err; }
+  window.__ready = true;
+}
+function readHash() { const h = hash(); if (h.has('ap')) { const v = (k, d) => { const x = h.get(k); if (k === 'w') return x === 'any' || x === null ? null : x === 'calm' ? 'calm' : DIRS.includes(+x) ? +x : null; if (k === 'g') return 'NESW'.includes(x || '?') ? x : null; return TO[k].includes(x) ? x : d; }; S.tool = { ap: v('ap', 'EWR'), k: v('k', 'A'), w: v('w'), g: v('g'), d: v('d', 'evening'), r: v('r', 'f') }; return 5; } return clamp(+(h.get('s') || 1) || 1, 1, 5); }
+addEventListener('hashchange', () => { const n = readHash(); if (n === 5 && S.data) setStep(5); });
+boot();

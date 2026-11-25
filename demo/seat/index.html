@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="zh-Hans"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>飞进飞出纽约，坐左边还是右边 · Left or right?</title>
+<meta name="description" content="Landing at Newark, Kennedy or LaGuardia: which window gets Manhattan? 降落纽约，曼哈顿在哪一边？">
+<meta property="og:title" content="Flying in and out of New York: left or right? 坐左边还是右边">
+<meta property="og:description" content="Which window gets Manhattan? Worked out from 14 days of real flights and a year of runway records.">
+<meta property="og:image" content="cover.jpg"><meta property="og:type" content="website"><meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#e4e9ee" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#10141b" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="favicon.svg"><link rel="stylesheet" href="style.css">
+<script>try{var t=localStorage.getItem('seat.theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head><body>
+<canvas id="c" role="img" aria-label=""></canvas>
+<div id="ui">
+  <nav id="top"><ol id="dots" aria-hidden="true"></ol><span class="sp"></span><button id="light" class="ic"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="7.2" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M12 4.8a7.2 7.2 0 0 1 0 14.4z" fill="currentColor"/></svg></button><button id="lang"></button><a id="home" href="/demo/"></a></nav>
+  <header id="head"><h1 id="h"></h1><p id="p"></p></header>
+  <button class="win" id="wL"></button><button class="win" id="wR"></button>
+  <div class="plate" id="pL"></div><div class="plate" id="pR"></div>
+  <div id="labels" aria-hidden="true"></div>
+  <div id="aisle"></div>
+  <section id="foot" aria-live="polite"><div id="bar"><i id="fill"></i><i id="pl"></i></div><p id="say"></p><div id="go"></div></section>
+  <section id="tool" hidden></section>
+  <div id="boot"></div>
+</div>
+<dialog id="about"></dialog>
+<noscript><p style="padding:2em">LaGuardia: sit left. Kennedy: sit right. Newark: left to land, right to take off. 拉瓜迪亚坐左，肯尼迪坐右；纽瓦克降落坐左，起飞坐右。</p></noscript>
+<script type="module" src="app.js"></script>
+</body></html>
