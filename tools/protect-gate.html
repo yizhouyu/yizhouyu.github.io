@@ -66,7 +66,6 @@ form { display: grid; gap: 14px; max-width: 560px; }
 .btn:hover { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 .btn[disabled] { opacity: .6; cursor: progress; }
 .keep { display: inline-flex; align-items: center; gap: 10px; font-size: 14.5px; color: var(--ink-2); cursor: pointer; width: fit-content; }
-.keep .nw { white-space: nowrap; }
 .keep input { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
 .msg { min-height: 22px; font: 600 14px/1.5 var(--font); color: var(--bad); }
 .bad .row input { border-color: var(--bad); }
@@ -93,15 +92,15 @@ form { display: grid; gap: 14px; max-width: 560px; }
     <a class="home" href="/">← Home</a>
   </header>
   <main class="gate">
-    <span class="cap">Private page · 私密页面</span>
+    <span class="cap">Private page</span>
     <h1 class="word" aria-label="Locked">L<b>o</b>cked</h1>
     <p class="lede">This page is encrypted. Enter the password to open it.</p>
     <form id="vault-form" autocomplete="off" novalidate>
       <div class="row">
-        <input id="vault-pw" type="password" name="password" placeholder="Password · 密码" aria-label="Password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
+        <input id="vault-pw" type="password" name="password" placeholder="Password" aria-label="Password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" required>
         <button class="btn" id="vault-go" type="submit">Unlock <span aria-hidden="true">→</span></button>
       </div>
-      <label class="keep"><input id="vault-keep" type="checkbox"> <span>Remember on this device · <span class="nw">在这台设备上记住</span></span></label>
+      <label class="keep"><input id="vault-keep" type="checkbox"> Remember on this device</label>
       <p class="msg" id="vault-msg" role="alert" aria-live="assertive"></p>
     </form>
     <noscript><p class="msg">This page needs JavaScript to decrypt its content.</p></noscript>

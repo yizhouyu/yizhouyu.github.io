@@ -173,7 +173,7 @@
       button.innerHTML = label;
       void form.offsetWidth;                 // restart the nudge animation
       form.classList.add('bad');
-      msg.textContent = 'Wrong password · 密码不对';
+      msg.textContent = 'Wrong password';
       input.select();
       return;
     }
