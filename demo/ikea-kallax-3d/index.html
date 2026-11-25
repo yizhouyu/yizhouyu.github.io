@@ -353,7 +353,7 @@ try {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.VSMShadowMap;
   const [anim, gltf, floorTex] = await Promise.all([fetch("anim.json").then(r => r.json()), new GLTFLoader().loadAsync("model.glb"), new THREE.TextureLoader().loadAsync("floor.jpg")]);
-  const P = window.player, L = {"sun": 2.394, "env": 0.42, "hemi": 0.12, "floorRough": 0.62, "floorTint": 0.8, "wall": [0.75, 0.731, 0.694]};
+  const P = window.player, L = {"floorPx": 1024, "fill": 0.0, "shadow": 1.7, "minDist": 0.35, "maxDist": 5.5, "partRough": 0.42, "sun": 2.394, "env": 0.42, "hemi": 0.12, "floorRough": 0.62, "floorTint": 0.8, "wall": [0.75, 0.731, 0.694]};
   // Blender is z-up, three.js is y-up: the model keeps Blender's axes inside a group that is turned once
   const B2T = (x, y, z) => new THREE.Vector3(x, z, -y);
   const scene = new THREE.Scene();
@@ -362,11 +362,12 @@ try {
   scene.environmentIntensity = L.env;
   const world = new THREE.Group(); world.rotation.x = -Math.PI / 2; world.add(gltf.scene); scene.add(world);
   const nodes = {};
-  gltf.scene.traverse(o => { nodes[o.name] = o;
+  gltf.scene.traverse(o => { nodes[(o.userData && o.userData.name) || o.name] = o;
     if (!o.isMesh) return;
     const kind = o.material.name;
-    o.castShadow = kind !== "hole"; o.receiveShadow = kind === "panel";
-    if (kind === "panel") o.material = new THREE.MeshStandardMaterial({ roughness: 0.42, metalness: 0 });   // one each: the colour is animated per panel
+    const tint = !!(anim.tracks[(o.userData && o.userData.name) || o.name] || {}).c;
+    o.castShadow = kind !== "hole"; o.receiveShadow = tint;
+    if (tint) o.material = new THREE.MeshStandardMaterial({ roughness: L.partRough, metalness: 0 });   // one each: the colour is animated per part
     if (kind === "hole") { o.material.polygonOffset = true; o.material.polygonOffsetFactor = -2; o.material.polygonOffsetUnits = -2; }
   });
   // room: wood floor, plain walls seen only from inside, baseboard
@@ -385,15 +386,18 @@ try {
   }
   const sunDir = B2T(...anim.sun).normalize();
   const sun = new THREE.DirectionalLight(new THREE.Color().setRGB(1.0, 0.95, 0.88), L.sun);
-  sun.target.position.set(0, 0.2, 0); sun.position.copy(sun.target.position).addScaledVector(sunDir, -6);
-  sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); sun.shadow.radius = 9; sun.shadow.blurSamples = 20; sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.006;
-  Object.assign(sun.shadow.camera, { left: -1.7, right: 1.7, top: 1.7, bottom: -1.7, near: 1, far: 12 });
+  sun.target.position.set(0, 0.2, 0); sun.position.copy(sun.target.position).addScaledVector(sunDir, -8);
+  sun.castShadow = true; const fine = matchMedia("(pointer: fine)").matches && renderer.capabilities.maxTextureSize >= 8192 && L.shadow > 2;   // a wide scene needs a finer map; phones keep the small one
+  sun.shadow.mapSize.setScalar(fine ? 4096 : 2048); sun.shadow.radius = fine ? 6 : L.shadow > 2 ? 5 : 9; sun.shadow.blurSamples = 20; sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.006;
+  Object.assign(sun.shadow.camera, { left: -L.shadow, right: L.shadow, top: L.shadow, bottom: -L.shadow, near: 1, far: 16 });
+  renderer.shadowMap.autoUpdate = false;       // shadows are redrawn only when something in the scene moves, not when the viewer turns it
+  const fill = new THREE.DirectionalLight(0xffffff, L.fill); fill.position.set(sunDir.x, 0.75, sunDir.z); scene.add(fill);   // soft light from the far side, no shadow
   scene.add(sun, sun.target, new THREE.HemisphereLight(0xffffff, 0x9a8a72, L.hemi));
 
   const camera = new THREE.PerspectiveCamera(30, 16 / 9, 0.05, 40);
   const hfov = 2 * Math.atan(anim.sensor / 2 / anim.lens);
   const controls = new OrbitControls(camera, canvas);
-  Object.assign(controls, { enablePan: false, enableDamping: true, dampingFactor: 0.12, minDistance: 0.35, maxDistance: 5.5, maxPolarAngle: Math.PI / 2 - 0.03, zoomSpeed: 0.8, rotateSpeed: 0.55 });
+  Object.assign(controls, { enablePan: false, enableDamping: true, dampingFactor: 0.12, minDistance: L.minDist, maxDistance: L.maxDist, maxPolarAngle: Math.PI / 2 - 0.03, zoomSpeed: 0.8, rotateSpeed: 0.55 });
 
   // tracks: [frame, values...] wherever the value changes; straight lines in between
   function at(keys, f) {
@@ -440,10 +444,10 @@ try {
       if (u >= 1) { back = null; user = false; resetBtn.hidden = true; }
     } else if (!user) { camera.position.copy(g.pos); controls.target.copy(g.tgt); }
     const moved = controls.update();
-    if (f !== lastF || moved || dirty) { apply(f); renderer.render(scene, camera); lastF = f; dirty = false; }
+    if (f !== lastF || moved || dirty) { if (f !== lastF || dirty) { apply(f); renderer.shadowMap.needsUpdate = true; } renderer.render(scene, camera); lastF = f; dirty = false; }
   }
   requestAnimationFrame(frame);
-  window.m2v = { ready: true, THREE, anim, nodes, world, scene, camera, controls, renderer, apply, guided, look: L, sun,
+  window.m2v = { ready: true, THREE, anim, nodes, world, scene, camera, controls, renderer, apply, guided, look: L, sun, fill,
                  redraw: () => { dirty = true; }, state: () => ({ user, returning: !!back, frame: lastF }) };
 } catch (err) {
   console.error(err);
