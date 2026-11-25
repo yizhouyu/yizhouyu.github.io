@@ -7,7 +7,7 @@ const BASE = -150;          // bottom of the plinth
 const COMMON = `#version 300 es
 precision highp float; precision highp sampler2D;
 const vec2 O=vec2(${U0}.,${V0}.), D=vec2(${W}.,${H}.); const float EX=${EX}., BH=${BH};
-uniform mat4 uVP; uniform vec3 uEye; uniform sampler2D uG,uLight,uSurf,uTop,uMap,uZone,uDiff; uniform vec3 uSun,uBg,uInk,uAcc,uPl; uniform float uDark,uTime,uSea,uFull; uniform vec3 uWipe; uniform vec2 uLamp;
+uniform mat4 uVP; uniform vec3 uEye; uniform sampler2D uG,uLight,uSurf,uTop,uMap,uZone,uDiff; uniform vec3 uSun,uBg,uInk,uAcc,uPl; uniform float uDark,uTime,uSea,uFull; uniform vec3 uWipe; uniform vec2 uLamp; uniform float uLift;
 float G(vec2 p){ return texture(uG,(p-O)/D).r; }
 float wipe(vec2 p){ return uWipe.y*smoothstep(uWipe.x+90.,uWipe.x-90.,p.x+18.*sin(p.y*.011)+9.*sin(p.y*.037)); }
 `;
@@ -38,7 +38,7 @@ void main(){
   o=vec4(tone(c),1.);
 }`;
 const V_WALL = COMMON + `layout(location=0) in vec4 aE; layout(location=1) in vec2 aH; out vec3 P; out vec3 N; out float zg; out float al; flat out float id;
-void main(){ int v=gl_VertexID; vec2 p=(v==0||v==2)?aE.xy:aE.zw; float m=wipe(p); float top=aH.x*EX+aH.y*BH*(1.-m); float z=v>1?top:aH.x*EX-12.; vec2 d=normalize(aE.zw-aE.xy); N=vec3(d.y,-d.x,0.); P=vec3(p,z); zg=aH.x*EX; al=(v==0||v==2)?0.:length(aE.zw-aE.xy); id=fract(sin(dot(aE.xy,vec2(12.9898,78.233)))*43758.5453); if(m>.995) { gl_Position=vec4(2.,2.,2.,1.); return; } gl_Position=uVP*vec4(P,1.); }`;
+void main(){ int v=gl_VertexID; vec2 p=(v==0||v==2)?aE.xy:aE.zw; float m=0.; float top=aH.x*EX+aH.y*BH; float z=(v>1?top:aH.x*EX-12.)+uLift; vec2 d=normalize(aE.zw-aE.xy); N=vec3(d.y,-d.x,0.); P=vec3(p,z); zg=aH.x*EX; al=(v==0||v==2)?0.:length(aE.zw-aE.xy); id=fract(sin(dot(aE.xy,vec2(12.9898,78.233)))*43758.5453); gl_Position=uVP*vec4(P,1.); }`;
 const F_WALL = COMMON + LIT + `in vec3 P; in vec3 N; in float zg; in float al; flat in float id; out vec4 o; uniform float uMarch;
 float h2(vec2 q){ return fract(sin(dot(q,vec2(127.1,311.7))+id*91.)*43758.5453); }
 bool manhattan(vec2 p){ return p.y>3500.? p.x<2150. : p.y>2400. ? p.x<2250. : p.x<1150.+(p.y-1200.)*.62; }
@@ -47,9 +47,9 @@ void main(){ vec3 n=normalize(N); vec2 uv=(P.xy+n.xy*3.5-O)/D; vec2 l=texture(uL
   vec3 c=tone(shade(uPl*.985,n,ao,sun)); float lamp=manhattan(P.xy)?uLamp.x:uLamp.y;
   if(lamp>.001){ vec2 q=vec2(al/4.6,(P.z-zg)/(3.9*BH)); vec2 f=fract(q), w=fwidth(q); float px=max(w.x,w.y); float on=step(.62,h2(floor(q)))*step(.6,q.y); vec2 e=smoothstep(.16,.30,f)*smoothstep(.16,.30,1.-f); float sharp=on*e.x*e.y; float mean=.38*.40*(.5+id); float k=mix(sharp,mean,smoothstep(.35,1.1,px)); c+=vec3(1.,.74,.40)*k*lamp*mix(1.,2.1,smoothstep(.35,1.1,px)); }
   o=vec4(c,1.); }`;
-const V_ROOF = COMMON + `layout(location=0) in vec4 a; out vec3 P; out float mm; void main(){ float m=wipe(a.xy); mm=m; P=vec3(a.xy,a.z*EX+a.w*BH*(1.-m)); if(m>.995){ gl_Position=vec4(2.,2.,2.,1.); return; } gl_Position=uVP*vec4(P,1.); }`;
+const V_ROOF = COMMON + `layout(location=0) in vec4 a; out vec3 P; out float mm; void main(){ float m=0.; mm=m; P=vec3(a.xy,a.z*EX+a.w*BH+uLift); gl_Position=uVP*vec4(P,1.); }`;
 const F_ROOF = COMMON + LIT + `in vec3 P; in float mm; out vec4 o; uniform float uDiffOn; void main(){ vec2 uv=(P.xy-O)/D; vec2 l=texture(uLight,uv).rg; vec3 al=uPl; if(uDiffOn>0.){ vec2 f=texture(uDiff,uv).rg; al=mix(al,mix(vec3(.16,.55,.42),vec3(.24,.80,.58),uDark),smoothstep(.35,.6,f.r)*.85*uDiffOn); al=mix(al,uAcc,smoothstep(.35,.6,f.g)*.85*uDiffOn); } o=vec4(tone(shade(al,vec3(0.,0.,1.),mix(l.x,1.,.25),l.y)),1.); }`;
-const V_BOX = COMMON + `layout(location=0) in vec3 a; layout(location=1) in vec3 b; out vec3 P; out vec3 N; uniform float uMelt; void main(){ P=a; float m=wipe(a.xy)*uMelt; P.z=mix(a.z,-400.,step(.6,m)); N=b; gl_Position=uVP*vec4(P,1.); }`;
+const V_BOX = COMMON + `layout(location=0) in vec3 a; layout(location=1) in vec3 b; out vec3 P; out vec3 N; uniform float uMelt; void main(){ P=a; float m=wipe(a.xy)*uMelt; P.z=a.z+uLift*uMelt; N=b; gl_Position=uVP*vec4(P,1.); }`;
 const F_BOX = COMMON + LIT + `in vec3 P; in vec3 N; out vec4 o; uniform vec3 uCol; void main(){ vec3 n=normalize(N); o=vec4(tone(shade(uCol,n,1.,1.)),1.); }`;
 const V_FLOOR = COMMON + `out vec2 p; void main(){ vec2 q=vec2(gl_VertexID&1,gl_VertexID>>1)*2.-1.; p=O+D*.5+q*26000.; gl_Position=uVP*vec4(p,${BASE}.,1.); }`;
 const F_FLOOR = COMMON + `in vec2 p; out vec4 o; void main(){ vec2 c=abs(p-(O+D*.5)+vec2(-90.,70.))-D*.5+120.; float d=length(max(c,0.)); float d2=length(max(abs(p-(O+D*.5))-D*.5,0.)); float s=.30*exp(-d/330.)+.22*exp(-d2/70.); o=vec4(uBg*(1.-s*mix(.75,.9,uDark)),1.); }`;
@@ -77,7 +77,7 @@ void main(){
   float e=8.; vec2 dn=vec2(texture(uSurf,uv+vec2(e,0.)/D).r-texture(uSurf,uv-vec2(e,0.)/D).r, texture(uSurf,uv+vec2(0.,e)/D).r-texture(uSurf,uv-vec2(0.,e)/D).r)/(2.*e); dn=clamp(dn,-.06,.06);
   float far=clamp(uPx*.10,0.,1.); vec2 rp=vec2(hs(p+vec2(1.5,0.))-hs(p-vec2(1.5,0.)),hs(p+vec2(0.,1.5))-hs(p-vec2(0.,1.5)))*.06*(1.-far*.7)*(.5+s.z*.8)*smoothstep(.1,1.5,th);
   vec3 n=normalize(vec3(-dn*EX*.9-rp*.35,1.)); vec3 v=normalize(uEye-vec3(p,z*EX));
-  vec4 c=glass(th,n,v,1.); if(g>-.6){ float q=smoothstep(.1,.6,th)*(1.-wipe(p)); c.rgb+=mix(vec3(.02,.09,.10),vec3(.03,.14,.15),uDark)*q; c.a*=1.-.22*q; } if(g>-.6){ float mm=wipe(p); c.a=mix(c.a,mix(c.a,1.,.45),mm); c.rgb*=mix(1.,.62,mm); }
+  vec4 c=glass(th,n,v,1.); if(g>-.6){ float q=smoothstep(.1,.6,th)*(1.-wipe(p)); c.rgb+=mix(vec3(.02,.09,.10),vec3(.03,.14,.15),uDark)*q; c.a*=1.-.22*q; } if(g>-.6){ float mm=wipe(p); c.a=mix(c.a,c.a*.55,mm); c.rgb=mix(c.rgb,c.rgb*.8+vec3(0.,.06,.08),mm); }
   float w=max(fwidth(th),.004); float rim=(1.-smoothstep(0.,1.7,th/w))*step(-.2,g); c.rgb+=rim*mix(vec3(.55,.72,.72),vec3(.16,.34,.36),uDark)*.35; c.a*=1.-rim*.25;
   float foam=smoothstep(.9,2.6,s.z)*smoothstep(.04,.2,th)*.30; c.rgb=mix(c.rgb,vec3(.85,.92,.92),foam); c.a*=1.-foam;
   o=c;
@@ -85,8 +85,8 @@ void main(){
 const V_SKIRT = COMMON + `uniform int uSide; out vec3 P; out vec3 N; out float vv; out float bot; void main(){ int i=gl_VertexID>>1; int t=gl_VertexID&1; float f=float(i)/512.; vec2 p=uSide==0?O+vec2(f*D.x,0.):uSide==1?O+vec2(D.x,f*D.y):uSide==2?O+vec2(D.x-f*D.x,D.y):O+vec2(0.,D.y-f*D.y); N=uSide==0?vec3(0.,-1.,0.):uSide==1?vec3(1.,0.,0.):uSide==2?vec3(0.,1.,0.):vec3(-1.,0.,0.); vec2 c=clamp(p,O+4.,O+D-4.); vec2 uv=(c-O)/D; float z=texture(uG,uv).r; vec4 s=texture(uSurf,uv); float e=s.y<.02?z:max(s.x,z); bot=z*EX; vv=float(t); P=vec3(p+N.xy*.5,t==1?e*EX+.6:z*EX); gl_Position=uVP*vec4(P,1.); }`;
 const F_SKIRT = COMMON + GLASS + `in vec3 P; in vec3 N; in float vv; in float bot; out vec4 o; void main(){ float top=smoothstep(.0,1.,vv); vec3 c=mix(mix(vec3(.33,.66,.67),vec3(.12,.40,.45),1.-top),mix(vec3(.12,.42,.46),vec3(.04,.20,.25),1.-top),uDark); float ed=fwidth(vv); c+=smoothstep(1.-ed*2.2,1.,vv)*vec3(.32,.45,.45)*mix(1.,.45,uDark); vec3 v=normalize(uEye-P); float F=.05+.8*pow(1.-abs(dot(v,N)),4.); c+=F*.25*env(reflect(-v,N)); o=vec4(c*.86,.14); }`;
 // ---- text lying on the ground or on the water
-const V_TXT = COMMON + `layout(location=0) in vec4 aP; layout(location=1) in vec4 aU; layout(location=2) in vec3 aS; uniform vec2 uCam; uniform float uPxM; uniform vec2 uFade; uniform float uLift; out vec2 uv; out float al; flat out float kind;
-void main(){ vec2 q=vec2(gl_VertexID&1,gl_VertexID>>1)*2.-1.; vec2 d=aP.zw; vec2 sz=aS.xy; kind=aS.z; float flip=dot(d,uCam)<-.02?-1.:1.; d*=flip; vec2 nn=vec2(-d.y,d.x); vec2 p=aP.xy+d*q.x*sz.x*.5+nn*q.y*sz.y*.5; float z=kind<.5?G(p)*EX+1.5:(kind<1.5?uSea*EX+2.:40.); uv=mix(aU.xy,aU.zw,vec2(q.x*.5+.5,.5-q.y*.5)); vec4 c=uVP*vec4(p,z,1.); vec4 c0=uVP*vec4(aP.xy,z,1.); float px=sz.y*uPxM/c0.w; al=smoothstep(uFade.x,uFade.x*1.5,px)*(1.-smoothstep(uFade.y,uFade.y*1.4,px)); float m=wipe(aP.xy); al*=kind<.5||kind>1.5?1.-m:1.-m*.9; if(al<.01) c=vec4(2.,2.,2.,1.); c.z-=uLift*c.w; gl_Position=c; }`;
+const V_TXT = COMMON + `layout(location=0) in vec4 aP; layout(location=1) in vec4 aU; layout(location=2) in vec3 aS; uniform vec2 uCam; uniform float uPxM; uniform vec2 uFade; uniform float uBias; out vec2 uv; out float al; flat out float kind;
+void main(){ vec2 q=vec2(gl_VertexID&1,gl_VertexID>>1)*2.-1.; vec2 d=aP.zw; vec2 sz=aS.xy; kind=aS.z; float flip=dot(d,uCam)<-.02?-1.:1.; d*=flip; vec2 nn=vec2(-d.y,d.x); vec2 p=aP.xy+d*q.x*sz.x*.5+nn*q.y*sz.y*.5; float z=kind<.5?G(p)*EX+1.5:(kind<1.5?uSea*EX+2.:40.); uv=mix(aU.xy,aU.zw,vec2(q.x*.5+.5,.5-q.y*.5)); vec4 c=uVP*vec4(p,z,1.); vec4 c0=uVP*vec4(aP.xy,z,1.); float px=sz.y*uPxM/c0.w; al=smoothstep(uFade.x,uFade.x*1.5,px)*(1.-smoothstep(uFade.y,uFade.y*1.4,px)); float m=wipe(aP.xy); al*=kind<.5||kind>1.5?1.-m:1.-m*.9; if(al<.01) c=vec4(2.,2.,2.,1.); c.z-=uBias*c.w; gl_Position=c; }`;
 const F_TXT = COMMON + `in vec2 uv; in float al; flat in float kind; uniform sampler2D uAtlas; uniform vec4 uTc; out vec4 o; void main(){ vec4 t=texture(uAtlas,uv); if(kind>1.5){ float f=t.a>.001?t.r/t.a:0.; o=vec4(mix(mix(vec3(1.),vec3(.07),uDark),uTc.rgb,clamp(f,0.,1.)),t.a*al*.95); } else o=vec4(uTc.rgb,t.a*al*uTc.a); }`;
 // ---- small things
 const V_DOT = COMMON + `layout(location=0) in vec4 a; uniform float uPxM,uDpr,uSz; out float st; void main(){ st=a.w; vec4 c=uVP*vec4(a.xy,max(G(a.xy)*EX,uSea*EX*0.)+a.z,1.); float m=wipe(a.xy); if(m>.5) c=vec4(2.,2.,2.,1.); gl_Position=c; gl_PointSize=clamp(14.*uPxM/c.w,(a.w>.5?6.:3.6)*uDpr,17.*uDpr)*uSz; }`;
@@ -222,7 +222,7 @@ export class View {
     return hit;
   }
   // ---- frame
-  uni(P) { const { gl } = this, u = P.u; gl.useProgram(P.p); gl.uniformMatrix4fv(u.uVP, false, this.VP); gl.uniform3fv(u.uEye, this.eye); ['uG', 'uLight', 'uSurf', 'uTop', 'uMap', 'uZone', 'uDiff'].forEach((n, i) => u[n] && gl.uniform1i(u[n], i)); u.uSun && gl.uniform3fv(u.uSun, this.sun); u.uBg && gl.uniform3fv(u.uBg, this.col.bg); u.uInk && gl.uniform3fv(u.uInk, this.col.ink); u.uAcc && gl.uniform3fv(u.uAcc, this.col.acc.map(v => Math.pow(v, 2.2))); u.uPl && gl.uniform3fv(u.uPl, this.col.pl); u.uDark && gl.uniform1f(u.uDark, this.dk); u.uTime && gl.uniform1f(u.uTime, this.time); u.uSea && gl.uniform1f(u.uSea, this.sim.sea); u.uWipe && gl.uniform3f(u.uWipe, this.wipeX, this.mapOn, 0); u.uLamp && gl.uniform2f(u.uLamp, this.lamp[0] * this.dusk, this.lamp[1] * this.dusk); return u; }
+  uni(P) { const { gl } = this, u = P.u; gl.useProgram(P.p); gl.uniformMatrix4fv(u.uVP, false, this.VP); gl.uniform3fv(u.uEye, this.eye); ['uG', 'uLight', 'uSurf', 'uTop', 'uMap', 'uZone', 'uDiff'].forEach((n, i) => u[n] && gl.uniform1i(u[n], i)); u.uSun && gl.uniform3fv(u.uSun, this.sun); u.uBg && gl.uniform3fv(u.uBg, this.col.bg); u.uInk && gl.uniform3fv(u.uInk, this.col.ink); u.uAcc && gl.uniform3fv(u.uAcc, this.col.acc.map(v => Math.pow(v, 2.2))); u.uPl && gl.uniform3fv(u.uPl, this.col.pl); u.uDark && gl.uniform1f(u.uDark, this.dk); u.uTime && gl.uniform1f(u.uTime, this.time); u.uSea && gl.uniform1f(u.uSea, this.sim.sea); u.uWipe && gl.uniform3f(u.uWipe, this.wipeX, this.mapOn, 0); u.uLift && gl.uniform1f(u.uLift, this.lift || 0); u.uLamp && gl.uniform2f(u.uLamp, this.lamp[0] * this.dusk, this.lamp[1] * this.dusk); return u; }
   draw(w, h, target = null) {
     const { gl, sim, p } = this; if (this.bakeNow) this.bake(); sim.surface(); this.aspect = w / h; this.matrices(w, h);
     if (this.walls && Math.abs(Math.log(this.cam.d / this.wallScale)) > .25) this.setWalls(this.wallLines, this.wallH);
@@ -247,7 +247,7 @@ export class View {
   }
   text(k, fade) {
     const { gl, p } = this; if (!this.nTxt || !this.txtRange[k] || !this.txtRange[k][1]) return; gl.enable(gl.BLEND); gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ZERO, gl.ONE); gl.depthMask(false);
-    const u = this.uni(p.txt); gl.uniform2f(u.uCam, this.right[0], this.right[1]); gl.uniform1f(u.uPxM, this.pxM / (this.dpr || 1)); gl.uniform2fv(u.uFade, fade); gl.uniform1f(u.uLift, k === 0 ? .0004 : 0); const c = k === 1 ? (this.dark ? [.80, .93, .95, .55] : [.96, 1, 1, .78]) : k === 2 ? [...this.col.ink, .80] : [...this.col.ink, .70]; gl.uniform4fv(u.uTc, c);
+    const u = this.uni(p.txt); gl.uniform2f(u.uCam, this.right[0], this.right[1]); gl.uniform1f(u.uPxM, this.pxM / (this.dpr || 1)); gl.uniform2fv(u.uFade, fade); gl.uniform1f(u.uBias, k === 0 ? .0004 : 0); const c = k === 1 ? (this.dark ? [.80, .93, .95, .55] : [.96, 1, 1, .78]) : k === 2 ? [...this.col.ink, .80] : [...this.col.ink, .70]; gl.uniform4fv(u.uTc, c);
     gl.activeTexture(gl.TEXTURE7); gl.bindTexture(gl.TEXTURE_2D, this.atlas); gl.uniform1i(u.uAtlas, 7); if (k === 2) gl.disable(gl.DEPTH_TEST); gl.bindVertexArray(this.txtV); const [s, n] = this.txtRange[k];
     gl.bindBuffer(gl.ARRAY_BUFFER, this.txtB);[[0, 4, 0], [1, 4, 16], [2, 3, 32]].forEach(([i, m, o]) => gl.vertexAttribPointer(i, m, gl.FLOAT, false, 44, o + s * 44)); gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, n); gl.enable(gl.DEPTH_TEST); gl.depthMask(true);
   }

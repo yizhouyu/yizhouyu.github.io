@@ -1,0 +1,6 @@
+// runs the water of the street away from the page's own thread
+import { makeFlow, setBoard, COURT } from './streetflow.js';
+let f = makeFlow(), gen = 0, speed = 0, last = 0, on = false, posted = 0; f.court = { cells: f.cells(COURT.x0 + 1, COURT.x1 - 1, COURT.z0 + 1, COURT.z1 - 1), cap: 0 }; f.sinks = [...f.drain, f.court]; const z0sea = f.h.slice();
+const post = () => { const h = f.h.slice(), x = f.qx.slice(), y = f.qy.slice(); posted = performance.now(); postMessage({ gen, t: f.t, h, x, y }, [h.buffer, x.buffer, y.buffer]); };
+function loop() { if (!(speed > 0)) { on = false; return; } const now = performance.now(), T1 = f.t + speed * Math.min(.12, (now - last) / 1000); last = now; while (f.t < T1 - 1e-4 && performance.now() - now < 40) f.step(Math.min(f.dt(), T1 - f.t)); if (performance.now() - posted > 28) post(); setTimeout(loop, 6); }
+onmessage = e => { const m = e.data; if (m.reset !== undefined) { gen = m.reset; f.reset(); f.h.set(z0sea); f.seaLevel = m.sea; f.hill.q = 0; f.z.set(f.z0); speed = 0; return; } if (m.board !== undefined) { setBoard(f, m.board); return; } f.hill.q = m.q; f.seaLevel = m.sea; m.caps.forEach((c, i) => f.drain[i].cap = c); f.court.cap = m.court; const was = speed; speed = m.speed; if (speed > 0 && !on) { on = true; last = performance.now(); setTimeout(loop, 0); } else if (was > 0 && !speed) post(); };
