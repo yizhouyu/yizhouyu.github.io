@@ -1,11 +1,12 @@
 // Homes. Metres, plan view. Walls are centre lines; features (doors, windows, openings) cut a gap in the wall they sit on.
 import { WALLS, W, H, W0, H0, SIZE, LARGE } from "./physics.js";
+import { HOMES, SOIL } from "./homes.js";
 
 const w = (m, x1, y1, x2, y2) => ({ m, x1, y1, x2, y2 });
 const f = (k, o, x, y, len, extra = {}) => ({ k, o, x, y, w: len, ...extra }); // k: door | win | gap, o: h | v (direction of the wall)
 const outer = (m, a, b, c, d) => [w(m, a, b, c, b), w(m, c, b, c, d), w(m, a, d, c, d), w(m, a, b, a, d)];
 
-export const PLANS = {
+export const PLANS = { ...HOMES,
   concrete: {
     router: [4.4, 1.42], phone: [9.95, 6.4],
     walls: [...outer("concrete", 0.7, 0.7, 10.5, 7.0),
@@ -61,8 +62,8 @@ export const PLANS = {
   },
 };
 // rooms where nobody puts a router / that do not count for the score
-export const NO_ROUTER = new Set(["bath", "bath2"]);
-export const NOT_COUNTED = new Set(["stairs", "hall", "closet"]);
+export const NO_ROUTER = new Set(["bath", "bath2", "lift"]);
+export const NOT_COUNTED = new Set(["stairs", "hall", "closet", "landing", "garage", "lift", "cellar", "stock"]);
 
 export const clone = (p) => ({ walls: [], feats: [], boxes: [], mirrors: [], blocks: [], labels: [], size: 1, ...JSON.parse(JSON.stringify(p)) });
 export const wallRect = (s) => { const t = WALLS[s.m].t / 2; return [Math.min(s.x1, s.x2) - t, Math.min(s.y1, s.y2) - t, Math.max(s.x1, s.x2) + t, Math.max(s.y1, s.y2) + t]; };
@@ -121,7 +122,7 @@ export function findRooms(plan) {
     const lab = plan.labels.find((l) => id[Math.floor(l[2] / RG) * RNX + Math.floor(l[1] / RG)] === k);
     let at = lab ? [lab[1], lab[2]] : middle(r.cells);
     const room = { key: lab ? lab[0] : null, num: lab ? 0 : ++n, at, area: r.area, cells: r.cells, index: keep.length };
-    room.counted = !NOT_COUNTED.has(room.key); room.routerOk = !NO_ROUTER.has(room.key) && room.key !== "stairs";
+    room.counted = !NOT_COUNTED.has(room.key); room.routerOk = !NO_ROUTER.has(room.key) && room.key !== "stairs" && room.key !== "lift";
     r.cells.forEach((c) => map[c] = keep.length); keep.push(room); });
   return { rooms: keep, map };
 }
@@ -146,7 +147,7 @@ export function crossings(ids, nx, ny, dx, a, b) {
 
 // ---- links
 const M = ["drywall", "brick", "concrete", "glass", "metal"], KS = ["door", "win", "gap"];
-export const NAMES = ["living", "kitchen", "bed1", "bed2", "study", "bath", "hall", "closet", "stairs", "bath2"];
+export const NAMES = ["living", "kitchen", "bed1", "bed2", "study", "bath", "hall", "closet", "stairs", "bath2", "dining", "common", "shop", "meeting", "office", "stock", "garage", "landing", "cellar", "lift"];
 export function encodePlan(p) {
   const r = (v) => Math.max(0, Math.round(v * 20)), j = (a) => a.map((n) => n.toString(36)).join(".");
   return [p.walls.map((s) => j([M.indexOf(s.m), r(s.x1), r(s.y1), r(s.x2), r(s.y2)])).join("_"),
@@ -154,13 +155,13 @@ export function encodePlan(p) {
     p.boxes.map((b) => j(b.slice(0, 4).map(r))).join("_"),
     (p.mirrors || []).map((m) => j([r(m[0]), r(m[1]), r(m[2]), Math.round(m[3] / 45) & 3])).join("_"),
     p.labels.filter((l) => NAMES.includes(l[0])).map((l) => j([NAMES.indexOf(l[0]), r(l[1]), r(l[2])])).join("_"),
-    p.size === LARGE ? "1" : "0"].join("~");
+    (p.size === LARGE ? "1" : "0") + (p.side ? "s" : "")].join("~");
 }
 export function decodePlan(s) {
   const [a = "", b = "", c = "", d = "", e = "", z = ""] = s.split("~"), num = (x) => x.split(".").map((v) => parseInt(v, 36));
-  const k = z === "1" ? LARGE : 1, mx = Math.round(W0 * k * 20), my = Math.round(H0 * k * 20);
+  const k = z[0] === "1" ? LARGE : 1, mx = Math.round(W0 * k * 20), my = Math.round(H0 * k * 20);
   const ok = (v, m) => Number.isFinite(v) && v >= 0 && v <= m;
-  const p = { walls: [], feats: [], boxes: [], mirrors: [], blocks: [], labels: [], size: k };
+  const p = { walls: [], feats: [], boxes: [], mirrors: [], blocks: [], labels: [], size: k, ...(z.includes("s") ? { side: 1, ...JSON.parse(JSON.stringify(SOIL)) } : {}) };
   for (const t of a.split("_").filter(Boolean).slice(0, 200)) { const [m, x1, y1, x2, y2] = num(t); if (M[m] && [x1, x2].every((v) => ok(v, mx)) && [y1, y2].every((v) => ok(v, my)) && (x1 === x2 || y1 === y2)) p.walls.push(w(M[m], x1 / 20, y1 / 20, x2 / 20, y2 / 20)); }
   for (const t of b.split("_").filter(Boolean).slice(0, 100)) { const [kk, o, x, y, l, op, h, sw, me] = num(t); if (KS[kk] && ok(x, mx) && ok(y, my) && ok(l, 100)) p.feats.push(f(KS[kk], o ? "v" : "h", x / 20, y / 20, l / 20, { open: op ? 1 : 0, h: h ? -1 : 1, s: sw ? -1 : 1, ...(me ? { m: "metal" } : {}) })); }
   for (const t of c.split("_").filter(Boolean).slice(0, 20)) { const q = num(t); if (q.length === 4 && q.every((v) => ok(v, mx)) && q[2] > q[0] && q[3] > q[1]) p.boxes.push([...q.map((v) => v / 20), "fridge"]); }

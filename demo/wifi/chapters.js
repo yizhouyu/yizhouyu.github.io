@@ -21,7 +21,7 @@ export const SCENES = {
     main: "box",
   },
   4: { // in the corner of two mirrors, close up; the router is 4 m away behind a concrete wall
-    make() { const plan = empty(); plan.mirrors = [[6.16, 3.84, 3.0, 90], [5.2, 3.44, 2.4, 0]]; for (const [x, m] of [[3.9, "concrete"]]) plan.walls.push({ m, x1: x, y1: 0.1, x2: x, y2: 7.58 }); return { plan, view: [4.86, 3.36, 1.4, 0.96], router: [1.6, 5.3], phone: [5.3, 3.9], band: "5", sharp: 1, lev: -89 }; },
+    make() { const plan = empty(); plan.mirrors = [[6.16, 3.84, 3.0, 90], [5.2, 3.44, 2.4, 0]]; for (const [x, m] of [[3.9, "concrete"]]) plan.walls.push({ m, x1: x, y1: 0.1, x2: x, y2: 7.58 }); return { plan, view: [4.86, 3.36, 1.4, 0.96], router: [1.6, 5.3], phone: [5.65, 3.905], home: [5.65, 3.905], band: "5", sharp: 1, lev: -89 }; },
     main: "phone",
   },
   5: { // the first home again, two bands
@@ -30,5 +30,5 @@ export const SCENES = {
   },
 };
 export const share = (m, band) => P.wallTR(m, P.BANDS[band].f).T; // how much gets straight through
-export const in1000 = (x) => { const n = x * 1000; return n >= 10 ? String(Math.round(n / 10) * 10) : String(Math.round(n)); };
+export const in1000 = (x) => { const n = x * 1000; return n >= 100 ? String(Math.round(n / 10) * 10) : n >= 10 ? String(Math.round(n)) : n.toFixed(1); };
 export const farther = (m, band) => Math.round(1 / Math.sqrt(share(m, band))); // a wall costs as much as standing this many times farther away (free space: power falls with distance squared)

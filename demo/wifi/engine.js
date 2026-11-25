@@ -34,13 +34,13 @@ void main(){
   o = vec4(z*8., min(a2*mix(1.,1./r,dist)*64., 60000.), 1.);
 }`;
 const DRAW = `${HEAD}
-uniform sampler2D O; uniform vec2 size, grid, src, WH; uniform vec4 view, L[12]; uniform float portrait, p1, flash, search, ppm, sharp, px, paper, lev;
+uniform sampler2D O, O2; uniform vec2 size, grid, grid2, src, src2, WH; uniform vec4 view, L[12]; uniform float portrait, p1, flash, search, ppm, sharp, px, paper, lev, two, edge; uniform vec2 off;
 out vec4 col;
 float h21(vec2 p){ p = fract(p*vec2(123.34,456.21)); p += dot(p,p+45.32); return fract(p.x*p.y); }
 float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f); return mix(mix(h21(i),h21(i+vec2(1,0)),f.x),mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x),f.y); }
 float fbm(vec2 p){ float a=.5,s=0.; for(int i=0;i<4;i++){ s+=a*vn(p); p=p*2.03+7.1; a*=.5; } return s; }
-vec4 cubic(vec2 uv, float lod){ // Catmull-Rom with 9 filtered taps
-  vec2 ts = grid/exp2(lod), p = uv*ts, t1 = floor(p-.5)+.5, f = p-t1;
+vec4 cubic(sampler2D O, vec2 uv, vec2 ts0){ // Catmull-Rom with 9 filtered taps
+  float lod = 0.; vec2 ts = ts0, p = uv*ts, t1 = floor(p-.5)+.5, f = p-t1;
   vec2 w0=f*(-.5+f*(1.-.5*f)), w1=1.+f*f*(-2.5+1.5*f), w2=f*(.5+f*(2.-1.5*f)), w3=f*f*(-.5+.5*f);
   vec2 w12=w1+w2, a=(t1-1.)/ts, b=(t1+w2/w12)/ts, c=(t1+2.)/ts;
   return textureLod(O,vec2(a.x,a.y),lod)*w0.x*w0.y + textureLod(O,vec2(b.x,a.y),lod)*w12.x*w0.y + textureLod(O,vec2(c.x,a.y),lod)*w3.x*w0.y
@@ -54,22 +54,24 @@ vec3 ramp(float t){
   if (t<.88) return mix(c3,c4,(t-.70)/.18); return mix(c4,c5,(t-.88)/.12);
 }
 void main(){
-  vec2 fc = gl_FragCoord.xy; fc.y = size.y-fc.y;             // top left origin
+  vec2 fc = gl_FragCoord.xy-off; fc.y = size.y-fc.y;             // top left origin
   vec2 s = fc/size, s1 = portrait>.5 ? vec2(s.y,1.-s.x) : s;    // where on the print, in plan orientation
   vec2 m = view.xy + s1*view.zw, uv = m/WH, pm = s1*vec2(11.2,7.68); // metres in the home / on the paper
-  vec4 z = cubic(uv,0.);
+  vec4 z = cubic(O,uv,grid); vec2 from = src;
   float lodS = mix(2.6,.5,sharp);
   vec2 j = mix(3.2,.6,sharp)/grid;
   float P = (textureLod(O,uv+j*vec2(.7,.3),lodS).z+textureLod(O,uv+j*vec2(-.3,.7),lodS).z+textureLod(O,uv+j*vec2(-.7,-.3),lodS).z+textureLod(O,uv+j*vec2(.3,-.7),lodS).z)*.25/64.;
   vec2 jl = 3.2/grid;
   float PL = (textureLod(O,uv+jl*vec2(3,0),4.).z+textureLod(O,uv-jl*vec2(3,0),4.).z+textureLod(O,uv+jl*vec2(0,3),4.).z+textureLod(O,uv-jl*vec2(0,3),4.).z)*.25/64.;
+  if (two > .5) { vec2 j2 = 3.2/grid2; float Q = (textureLod(O2,uv+j2*vec2(.7,.3),2.6).z+textureLod(O2,uv+j2*vec2(-.3,.7),2.6).z+textureLod(O2,uv+j2*vec2(-.7,-.3),2.6).z+textureLod(O2,uv+j2*vec2(.3,-.7),2.6).z)*.25/64.; // two routers on two channels: the phone takes the stronger
+    if (Q > P) { P = Q; PL = (textureLod(O2,uv+j2*vec2(3,0),4.).z+textureLod(O2,uv-j2*vec2(3,0),4.).z+textureLod(O2,uv+j2*vec2(0,3),4.).z+textureLod(O2,uv-j2*vec2(0,3),4.).z)*.25/64.; z = cubic(O2,uv,grid2); from = src2; } }
   float d = p1 + 4.342945*log(max(P,1e-12));                 // dBm, small neighbourhood
   float dL = p1 + 4.342945*log(max(PL,1e-12));
   float base = clamp((mix(d,dL,mix(.5,0.,sharp))+90.)/60.,0.,1.);  // -90 dBm black-blue ... -30 dBm white
   base = mix(pow(base,1.16), clamp((d-lev)/30.,0.,1.), sharp);   // close up: fixed spots, not passing crests
   // the wave itself, relative to its neighbourhood
   float Pw = mix(P,PL,.35);
-  float r = max(length(m-src),.2), a = sqrt(max(mix(Pw,PL,sharp)*mix(r,1.,search),1e-13));
+  float r = max(length(m-from),.2), a = sqrt(max(mix(Pw,PL,sharp)*mix(r,1.,search),1e-13));
   float rip = clamp(z.x/8./a/1.35,-1.6,1.6);
   float crest = exp(2.1*(min(rip,1.)-1.));                   // thin bright crests, broad dark troughs
   float env = smoothstep(.0,.22,base);
@@ -89,8 +91,8 @@ void main(){
   vec2 e2 = min(pm, vec2(11.2,7.68)-pm);
   float streak = fbm(vec2(pm.x*1.1,pm.y*9.))*.15, streak2 = fbm(vec2(pm.x*9.,pm.y*1.1)+9.)*.13;
   float ed = min(e2.x-.02-streak, e2.y-.02-streak2);
-  float al = smoothstep(0.,.04,ed+.03*(fbm(pm*30.)-.5));
-  c = mix(c, mix(vec3(.09,.22,.42),vec3(.02,.085,.20),paper), (1.-smoothstep(.0,.15,ed))*mix(.55,.45,paper)); // pigment pools at the edge
+  float al = max(edge, smoothstep(0.,.04,ed+.03*(fbm(pm*30.)-.5)));
+  c = mix(c, mix(vec3(.09,.22,.42),vec3(.02,.085,.20),paper), (1.-edge)*(1.-smoothstep(.0,.15,ed))*mix(.55,.45,paper)); // pigment pools at the edge
   c *= mix(.93,1.,paper);
   col = vec4(c*al, al);
 }`;
@@ -172,14 +174,16 @@ export class Engine {
     gl.uniform2f(pr.u.src, this.src[0] / this.dx - 0.5, this.src[1] / this.dx - 0.5); gl.uniform1f(pr.u.dx, this.dx); gl.uniform1f(pr.u.dist, this.search ? 0 : 1);
     gl.drawArrays(gl.TRIANGLES, 0, 3); gl.bindTexture(gl.TEXTURE_2D, this.O); gl.generateMipmap(gl.TEXTURE_2D);
   }
-  draw(w, h, target = null) {
-    const gl = this.gl, pr = this.prog.draw; gl.useProgram(pr.p); gl.bindFramebuffer(gl.FRAMEBUFFER, target); gl.viewport(0, 0, w, h); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+  // opt.cut = [x, y, w, h] of the picture (top left origin) to draw; opt.keep = leave what is there; opt.second = another engine with a second router
+  draw(w, h, opt = {}) {
+    const gl = this.gl, pr = this.prog.draw; gl.useProgram(pr.p); gl.bindFramebuffer(gl.FRAMEBUFFER, null); { const o = opt.at; gl.viewport(o ? o[0] : 0, o ? o[1] : 0, w, h); gl.uniform2f(pr.u.off, o ? o[0] : 0, o ? o[1] : 0); gl.uniform1f(pr.u.edge, o ? 1 : 0); } if (!opt.keep) { gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT); } if (opt.cut) { const [x, y, cw, ch] = opt.cut.map(Math.round); gl.enable(gl.SCISSOR_TEST); gl.scissor(x, (opt.full || h) - y - ch, Math.max(0, cw), Math.max(0, ch)); }
+    const s2 = opt.second; gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, s2 ? s2.O : this.O); gl.uniform1i(pr.u.O2, 1); gl.uniform1f(pr.u.two, s2 ? 1 : 0); gl.uniform2f(pr.u.grid2, s2 ? s2.nx : this.nx, s2 ? s2.ny : this.ny); if (s2) gl.uniform2f(pr.u.src2, s2.src[0], s2.src[1]);
     gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.O); gl.uniform1i(pr.u.O, 0);
     gl.uniform2f(pr.u.size, w, h); gl.uniform2f(pr.u.grid, this.nx, this.ny); gl.uniform2f(pr.u.src, this.src[0], this.src[1]);
-    const v = this.view; gl.uniform2f(pr.u.WH, W, H); gl.uniform4f(pr.u.view, v.x, v.y, v.w, v.h); gl.uniform4fv(pr.u["L[0]"], this.labels); gl.uniform1f(pr.u.sharp, this.sharp); gl.uniform1f(pr.u.px, this.px); gl.uniform1f(pr.u.paper, this.paper); gl.uniform1f(pr.u.lev, this.lev ?? -94);
-    gl.uniform1f(pr.u.portrait, this.portrait ? 1 : 0); gl.uniform1f(pr.u.p1, this.p1); gl.uniform1f(pr.u.flash, this.flash); gl.uniform1f(pr.u.search, this.search ? 1 : 0);
-    gl.uniform1f(pr.u.ppm, w / (this.portrait ? v.h : v.w));
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    const v = opt.view || this.view; gl.uniform2f(pr.u.WH, W, H); gl.uniform4f(pr.u.view, v.x, v.y, v.w, v.h); gl.uniform4fv(pr.u["L[0]"], opt.at ? new Float32Array(48) : this.labels); gl.uniform1f(pr.u.sharp, this.sharp); gl.uniform1f(pr.u.px, this.px); gl.uniform1f(pr.u.paper, this.paper); gl.uniform1f(pr.u.lev, this.lev ?? -94);
+    gl.uniform1f(pr.u.portrait, this.portrait && !opt.upright ? 1 : 0); gl.uniform1f(pr.u.p1, this.p1); gl.uniform1f(pr.u.flash, this.flash); gl.uniform1f(pr.u.search, this.search ? 1 : 0);
+    gl.uniform1f(pr.u.ppm, w / (this.portrait && !opt.upright ? v.h : v.w));
+    gl.drawArrays(gl.TRIANGLES, 0, 3); if (opt.cut) gl.disable(gl.SCISSOR_TEST);
   }
   // asynchronous read of the coarse power map (16 cells squares) and one fine patch; never stalls the picture
   requestRead(px, py, L = 2) {
