@@ -1,0 +1,34 @@
+// facts about the model that do not need the GPU: names, tide and storm, doors, walls, links
+import { U0, V0, W, H, NX, NY, DX, MHHW } from './data.js';
+export const SANDY = 2.743, FT = 0.3048;
+export class World {
+  constructor(names, bed, thr, zone, bld) { Object.assign(this, names); this.bed = bed; this.thr = thr; this.zone = zone; this.bld = bld; this.seg = [];
+    this.streets.forEach(([n, b, ls], i) => ls.forEach(l => { for (let k = 0; k + 3 < l.length; k += 2) this.seg.push([i, l[k], l[k + 1], l[k + 2], l[k + 3]]); })); this.doors(); }
+  cell(x, y) { const i = Math.floor((x - U0) / DX), j = Math.floor((y - V0) / DX); return i < 0 || j < 0 || i >= NX || j >= NY ? -1 : j * NX + i; }
+  open(k) { const p = this.bed[k * 4 + 1]; return p > .01 && p < 1.5; }
+  isSea(k) { return this.bed[k * 4 + 1] > 1.5; }
+  nearOpen(x, y, r = 7) { const c = this.cell(x, y); if (c < 0) return -1; if (this.open(c)) return c; const i = c % NX, j = Math.floor(c / NX); let best = -1, bd = 1e9; for (let b = -r; b <= r; b++) for (let a = -r; a <= r; a++) { const I = i + a, J = j + b; if (I < 0 || J < 0 || I >= NX || J >= NY) continue; const k = J * NX + I, d = a * a + b * b; if (d < bd && this.open(k)) { bd = d; best = k; } } return best; }
+  xy(k) { return [U0 + (k % NX + .5) * DX, V0 + (Math.floor(k / NX) + .5) * DX]; }
+  // level of the harbour (above a normal high tide) at which a cell first gets wet; null = not below 6.9 m
+  wetAt(k) { const t = this.thr[k]; return t >= 254 ? null : t * .03 - MHHW; }
+  place(x, y) { const D = new Map(); for (const [i, a, b, c, d] of this.seg) { const vx = c - a, vy = d - b, t = Math.max(0, Math.min(1, ((x - a) * vx + (y - b) * vy) / (vx * vx + vy * vy || 1))), q = Math.hypot(x - a - vx * t, y - b - vy * t); if (q < (D.get(i)?.[0] ?? 160)) D.set(i, [q, a + vx * t, b + vy * t]); }
+    const l = [...D].sort((a, b) => a[1][0] - b[1][0]); if (!l.length) return null; const [i] = l[0], A = this.streets[i]; let best = null; for (const [j] of l.slice(1)) { const B = this.streets[j]; if (B[0] === A[0]) continue; const c = this.cross(A, B, x, y); if (!c) continue; const d = Math.hypot(c[0] - x, c[1] - y); if (d < 150 && (!best || d < best[1])) best = [B[0], d]; } return best ? [A[0], best[0], best[1] < 45] : [A[0]]; }
+  // where two streets really meet (nearest such place to x,y)
+  cross(A, B, x, y) { let best = null; for (const l of A[2]) for (let i = 0; i + 3 < l.length; i += 2) for (const m of B[2]) for (let j = 0; j + 3 < m.length; j += 2) { const x1 = l[i], y1 = l[i + 1], x2 = l[i + 2], y2 = l[i + 3], x3 = m[j], y3 = m[j + 1], x4 = m[j + 2], y4 = m[j + 3], d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4), La = Math.hypot(x2 - x1, y2 - y1), Lb = Math.hypot(x4 - x3, y4 - y3); if (Math.abs(d) < .17 * La * Lb || !La || !Lb) continue; const p = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / d, q = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / d, e = Math.max(0, -p, p - 1) * La + Math.max(0, -q, q - 1) * Lb; if (e > 22) continue; const X = x1 + (x2 - x1) * Math.max(0, Math.min(1, p)), Y = y1 + (y2 - y1) * Math.max(0, Math.min(1, p)), s = x === undefined ? e : Math.hypot(X - x, Y - y); if (!best || s < best[2]) best = [X, Y, s]; } return best; }
+  // ---- the night of 29 October 2012 (6-minute values; hours since 28 Oct 00:00 local time)
+  at(a, h) { const f = Math.max(0, Math.min(a.length - 1.001, h * 10)), i = Math.floor(f); return a[i] + (a[i + 1] - a[i]) * (f - i); }
+  tide(h) { return this.at(this.pred, h); }
+  surge(h) { return this.at(this.obs, h) - this.at(this.pred, h); }
+  level(h, shift = 0) { return this.tide(h) + this.surge(Math.max(0, Math.min(95.8, h - shift))); }
+  peak(shift) { let m = -9, t = 0; for (let h = 24; h < 72; h += .1) { const v = this.level(h, shift); if (v > m) { m = v; t = h; } } return [m, t]; }
+  window(shift) { const [m, t] = this.peak(shift); let a = t, b = t; while (a > t - 5 && this.level(a, shift) > .35) a -= .1; b = t + 1.2; return m < .6 ? [t - 1.2, t + .6] : [a, b]; }
+  // ---- doors: for every building the open cells along its outline
+  doors() { const { nb, st, X, Y } = this.bld, F = [], S = new Int32Array(nb + 1); for (let b = 0; b < nb; b++) { S[b] = F.length; const seen = new Set(), s = st[b], e = st[b + 1]; for (let k = s; k < e; k++) { const n = k + 1 < e ? k + 1 : s, dx = X[n] - X[k], dy = Y[n] - Y[k], L = Math.hypot(dx, dy); if (L < 3) continue; const m = Math.max(1, Math.round(L / 14)); for (let q = 0; q < m; q++) { const t = (q + .5) / m; for (const o of [4, 8]) { const c = this.cell(X[k] + dx * t + dy / L * o, Y[k] + dy * t - dx / L * o); if (c >= 0 && this.open(c)) { if (!seen.has(c)) { seen.add(c); F.push(c); } break; } } } } } S[nb] = F.length; this.dc = Int32Array.from(F); this.ds = S; }
+  wetDoors(depth, lim = .3) { const { nb } = this.bld, o = new Uint8Array(nb); let n = 0; for (let b = 0; b < nb; b++) { for (let i = this.ds[b]; i < this.ds[b + 1]; i++) if (depth(this.dc[i]) >= lim) { o[b] = 1; n++; break; } } return { n, o }; }
+  // ---- walls: polyline -> face-connected cells, 2 m above their ground
+  wallCells(lines, h) { const m = new Map(); for (const l of lines) for (let i = 0; i + 1 < l.length; i++) { const [a, b] = [l[i], l[i + 1]], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 1.5)); let pi = null, pj = null; for (let s = 0; s <= n; s++) { const x = a[0] + (b[0] - a[0]) * s / n, y = a[1] + (b[1] - a[1]) * s / n, I = Math.floor((x - U0) / DX), J = Math.floor((y - V0) / DX); const put = (I, J) => { if (I < 0 || J < 0 || I >= NX || J >= NY) return; const k = J * NX + I; if (!this.isSea(k)) m.set(k, this.z0[k] + h); }; put(I, J); if (pi !== null && I !== pi && J !== pj) put(I, pj); pi = I; pj = J; } } return [...m]; }
+  wallLength(lines) { let s = 0; for (const l of lines) for (let i = 0; i + 1 < l.length; i++) { const [a, b] = [l[i], l[i + 1]], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / 6)); for (let q = 0; q < n; q++) { const t = (q + .5) / n, k = this.cell(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t); if (k >= 0 && this.open(k)) s += L / n; } } return s; }
+}
+// links: polylines as base-36 deltas of 4 m
+export const enc = lines => lines.filter(l => l.length > 1).map(l => { let x = 0, y = 0; return l.map(p => { const a = Math.round((p[0] - U0) / 4), b = Math.round((p[1] - V0) / 4), s = (a - x).toString(36) + '.' + (b - y).toString(36); x = a; y = b; return s; }).join('_'); }).join('!');
+export const dec = s => s.split('!').filter(Boolean).slice(0, 160).map(l => { let x = 0, y = 0; return l.split('_').slice(0, 400).map(p => { const [a, b] = p.split('.').map(v => parseInt(v, 36)); x += a; y += b; return [x * 4 + U0, y * 4 + V0]; }).filter(p => Number.isFinite(p[0]) && Number.isFinite(p[1]) && p[0] >= U0 - 400 && p[0] <= U0 + W + 400 && p[1] >= V0 - 400 && p[1] <= V0 + H + 400); }).filter(l => l.length > 1);

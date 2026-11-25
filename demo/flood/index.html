@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Pour Water on New York</title>
+<meta name="description" content="How high must the water rise to reach your street? Lower Manhattan as a plaster model with real water.">
+<meta property="og:title" content="Pour Water on New York / 往纽约倒水">
+<meta property="og:description" content="How high must the water rise to reach your street? 水要涨多高，才会到你那条街？">
+<meta property="og:image" content="https://yizhouyu.dev/demo/flood/cover.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#e6e6e4">
+<link rel="icon" href="favicon.svg">
+<link rel="preload" href="font/jost.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script>try{var t=localStorage.getItem('flood.theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<canvas id="gl" tabindex="0" role="img"></canvas>
+<div id="scrim"></div>
+<header>
+  <h1 id="title"></h1>
+  <nav><a id="home" href="/demo/"></a><button id="theme" class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button><button id="lang"></button></nav>
+</header>
+<main id="story" aria-live="polite">
+  <p id="step"></p>
+  <h2 id="q"></h2>
+  <div id="say"></div>
+  <div id="act"></div>
+  <div id="pager"><button id="prev"></button><button id="next"></button><span id="prog"></span><button id="skip"></button></div>
+</main>
+<div id="staff" role="slider" tabindex="0" aria-orientation="vertical"><svg id="rule" aria-hidden="true"></svg><div id="hand"><p><b id="hv"></b><span id="hl"></span></p></div></div>
+<div id="wipe" role="slider" tabindex="0" hidden><i></i><span><svg viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></svg></span></div>
+<svg id="lead" aria-hidden="true"><g id="hint"><circle r="4"/><circle r="4" class="p"/></g><line id="pinl"/><circle id="pinc" r="3.5"/></svg>
+<div id="pin" hidden></div>
+<footer id="dock">
+  <div id="readout" aria-live="off"></div>
+  <div id="tools" role="toolbar">
+    <button data-tool="tap"><svg viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-2.5 3M12 3l2.500 3M12 21l-2.500-3M12 21l2.500-3M3 12l3-2.500M3 12l3 2.500M21 12l-3-2.500M21 12l-3 2.500"/></svg><span></span></button>
+    <button data-tool="rain"><svg viewBox="0 0 24 24"><path d="M7 4l-2 6M13 4l-2 6M19 4l-2 6M10 13l-2 6M16 13l-2 6"/></svg><span></span></button>
+    <button data-tool="wall"><svg viewBox="0 0 24 24"><path d="M3 8h18v10H3zM3 13h18M9 8v5M15 13v5"/></svg><span></span></button>
+    <i class="sep"></i>
+    <button data-act="map"><svg viewBox="0 0 24 24"><path d="M3 6l6-2 6 2 6-2v14l-6 2-6-2-6 2zM9 4v14M15 6v14"/></svg><span></span></button>
+    <button data-act="night"><svg viewBox="0 0 24 24"><path d="M2 15c3 0 4-9 8-9s4 12 8 12c2 0 3-2 4-3"/></svg><span></span></button>
+    <i class="sep"></i>
+    <button data-act="undo"><svg viewBox="0 0 24 24"><path d="M8 5L4 9l4 4M4 9h10a5 5 0 0 1 0 10h-4"/></svg><span></span></button>
+    <button data-act="reset"><svg viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2-5M19 4v4h-4"/></svg><span></span></button>
+    <button data-act="more" id="moreb"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.200"/><circle cx="12" cy="12" r="1.200"/><circle cx="19" cy="12" r="1.200"/></svg><span></span></button>
+  </div>
+</footer>
+<div id="menu" hidden>
+  <label id="findl"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M16 16l5 5"/></svg><input id="find" type="text" autocomplete="off" spellcheck="false" enterkeyhint="search"></label>
+  <ul id="hits"></ul>
+  <div id="menub"><button id="share"></button><button id="save"></button><button id="aboutb"></button><button id="backb" hidden></button><button id="startb"></button></div>
+</div>
+<section id="night" hidden><svg id="graph" role="slider" tabindex="0"></svg></section>
+<dialog id="about"><button class="x" data-x></button><div id="aboutt"></div></dialog>
+<dialog id="end"><button class="x" data-x></button><div id="endt"></div></dialog>
+<div id="toast" role="status"></div>
+<div id="load"><div><p id="loadt"></p><i><b id="loadb"></b></i></div></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

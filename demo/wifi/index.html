@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f3f5f3" id="tc">
+<title>Where should I put the router?</title>
+<meta name="description" content="Drag the router and watch real Wi-Fi waves fill a home. Then draw your own and find the best spot.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Where should I put the router? · 路由器放哪里？">
+<meta property="og:description" content="Drag the router and watch real Wi-Fi waves fill a home. Then draw your own and find the best spot.">
+<meta property="og:image" content="https://yizhouyu.dev/demo/wifi/cover.jpg">
+<meta property="og:image:width" content="1280"><meta property="og:image:height" content="720">
+<meta property="og:url" content="https://yizhouyu.dev/demo/wifi/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/head-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="routed-gothic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script>try{var q=new URLSearchParams(location.search).get("theme")||localStorage.getItem("wifi-theme");if(q==="dark"||q==="light")document.documentElement.dataset.theme=q}catch(e){}</script>
+</head>
+<body>
+<header class="top"><a id="home" href="/demo/"></a><nav id="index"></nav><span class="right"><button id="theme" type="button"></button><button id="lang" type="button"></button></span></header>
+<main class="sheet" id="sheet">
+  <section class="head"><h1 id="ask"></h1><p id="say" role="status" aria-live="polite"></p></section>
+  <section class="print" id="print">
+    <canvas id="gl" role="img"></canvas>
+    <img id="photo" alt="" hidden>
+    <canvas id="ink" aria-hidden="true"></canvas>
+    <svg id="pencil" aria-hidden="true"></svg>
+    <div id="labels" aria-hidden="true"></div>
+    <div id="things"></div>
+    <button id="phone" class="mark" type="button"><svg viewBox="0 0 28 44" aria-hidden="true"><rect x="2" y="2" width="24" height="40" rx="4.5" fill="#f3f5f3" stroke="#061a38" stroke-width="2"/><g id="bars" fill="#061a38"><rect x="6" y="23.5" width="3" height="5.5"/><rect x="10.4" y="19.5" width="3" height="9.5"/><rect x="14.8" y="15.5" width="3" height="13.5"/><rect x="19.2" y="11.5" width="3" height="17.5"/></g><rect x="10.5" y="35.6" width="7" height="1.7" rx=".8" fill="#061a38"/></svg><span id="pv"></span></button>
+    <button id="router" class="mark" type="button"><svg viewBox="0 0 52 52" aria-hidden="true"><g stroke="#f3f5f3" stroke-width="6" stroke-linecap="round"><path d="M14 31 8 10M38 31l6-21"/></g><rect x="4" y="28" width="44" height="17" rx="3" fill="#e0352b" stroke="#f3f5f3" stroke-width="2.4"/><g stroke="#e0352b" stroke-width="3" stroke-linecap="round"><path d="M14 30 8 10M38 30l6-20"/></g><g fill="#f3f5f3"><circle cx="13" cy="36.5" r="1.9"/><circle cx="20" cy="36.5" r="1.9"/><circle cx="27" cy="36.5" r="1.9"/></g></svg></button>
+    <div id="cue" aria-hidden="true"><i id="pulse"></i><b id="hint"></b></div>
+    <button id="unzoom" type="button" hidden></button>
+  </section>
+  <section class="body" id="body">
+    <div id="read"></div>
+    <div id="extra"></div>
+    <div class="acts" id="acts"></div>
+    <div id="more"></div>
+    <div id="tools" hidden></div>
+  </section>
+  <footer class="strip" id="strip"></footer>
+  <ul class="sr" id="facts"></ul>
+</main>
+<dialog id="end"><div class="sheetbox"><img id="endimg" alt=""><p id="endT"></p><div class="row"><button class="solid" id="dlSave" type="button"></button><button class="line" id="dlLink" type="button"></button><button class="line" id="dlShare" type="button" hidden></button><button class="text" id="dlClose" type="button"></button></div></div></dialog>
+<dialog id="about"><div class="sheetbox read"><button class="text" id="abClose" type="button"></button><h2 id="abH"></h2><div id="abB"></div></div></dialog>
+<input type="file" id="file" accept="image/*" hidden>
+<script type="module" src="app.js"></script>
+</body>
+</html>
