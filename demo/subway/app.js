@@ -113,7 +113,7 @@ export const free = A.free = () => {                              // the part of
 function reachBox(yaw) {                                          // what can be reached now (and by day too, in the chapter that compares): centre and half sizes in camera axes, the walk included
   const c = Math.cos(yaw), s = Math.sin(yaw), lim = S.lim * 60, cmp = !!A.ghost; let a = 1e9, b = -1e9, d = 1e9, e = -1e9; const add = (x, y, r) => { const X = x * c + y * s, Y = -x * s + y * c; a = Math.min(a, X - r); b = Math.max(b, X + r); d = Math.min(d, Y - r); e = Math.max(e, Y + r); };
   for (let i = 0; i < net.nS; i++) { if (A.arr[i] <= lim) add(XY[2 * i], XY[2 * i + 1], 420); if (cmp && A.ghost[i] <= lim) add(XY[2 * i], XY[2 * i + 1], 420); }
-  add(cxXY[2 * S.cx], cxXY[2 * S.cx + 1], 1300); if (S.step === 1 && A.ui?.PLACES) for (const [k] of A.ui.PLACES) add(cxXY[2 * k], cxXY[2 * k + 1], 1500); const mx = (a + b) / 2, my = (d + e) / 2; return [mx * c - my * s, mx * s + my * c, (b - a) / 2, (e - d) / 2];
+  add(cxXY[2 * S.cx], cxXY[2 * S.cx + 1], 1300); if (A.ui?.showPlaces?.()) for (const [k] of A.ui.PLACES) add(cxXY[2 * k], cxXY[2 * k + 1], 1500); const mx = (a + b) / 2, my = (d + e) / 2; return [mx * c - my * s, mx * s + my * c, (b - a) / 2, (e - d) / 2];
 }
 function routeBox(yaw) { const c = Math.cos(yaw), s = Math.sin(yaw), ks = [S.cx, ...S.focus]; let a = 1e9, b = -1e9, d = 1e9, e = -1e9; const add = (x, y) => { const X = x * c + y * s, Y = -x * s + y * c; a = Math.min(a, X); b = Math.max(b, X); d = Math.min(d, Y); e = Math.max(e, Y); }; for (const k of ks) add(cxXY[2 * k], cxXY[2 * k + 1]); if (G) for (const l of [...(A.legs || []), ...(A.legs2 || [])]) A.legPts(l, q => add(q[0], q[1])); const mx = (a + b) / 2, my = (d + e) / 2; return [mx * c - my * s, mx * s + my * c, Math.max(1900, (b - a) / 2 + 500), Math.max(1900, (e - d) / 2 + 500)]; }
 A.reachBox = yaw => reachBox(yaw);
@@ -234,7 +234,7 @@ function drawOver() {
   const fs = phone ? 14 : 15; g.save(); g.lineJoin = "round";
   const halo = (tx, x, yy, col, lw = 4) => { g.strokeStyle = col; g.lineWidth = lw; g.strokeText(tx, x, yy); g.fillStyle = ink; g.fillText(tx, x, yy); };
   if (still) {
-    const pl = S.step === 1 && !S.pick && A.ui ? A.ui.places() : null, must = pl ? pl.all.map(x => x.k) : S.focus || []; const r0 = phone ? 6 : 9, zoom = S.view === "map" ? Math.max(1, frameFor().mpp / cam.mpp) : 1, n = Math.round((S.hide ? r0 + 4 : r0) * (zoom > 1.5 ? Math.min(2.6, zoom) : 1)), moving = drag.strip || S.playing || !!A.ui?.L?.anim, quiet = !!S.route;
+    const pl = A.ui?.showPlaces?.() ? A.ui.places() : null, must = pl ? pl.all.map(x => x.k) : S.focus || []; const r0 = phone ? 6 : 9, zoom = S.view === "map" ? Math.max(1, frameFor().mpp / cam.mpp) : 1, n = Math.round((S.hide ? r0 + 4 : r0) * (zoom > 1.5 ? Math.min(2.6, zoom) : 1)), moving = drag.strip || S.playing || !!A.ui?.L?.anim, quiet = !!S.route;
     placed = LB.place(g, { view, n: reveal < 1e8 && !quiet ? Math.min(n, 99) : n, lim, font: `${fs}px ${FONT()}`, lh: fs + 3, plate: plateSize(), boxes: rings, space: S.hide ? (phone ? 62 : 84) : phone ? 56 : 74, must, only: quiet || !!pl, names: pl ? new Map(pl.all.map(x => [x.k, x.name])) : null, soft: !!pl && phone, all: S.hide || S.pick, frozen: moving || reveal < 1e8 });
     A.placed = placed; A.named = pl ? EMPTY : new Set(placed.filter(p => !p.plate).map(p => p.k)); if (pl) for (const x of pl.all) { if (x.k === S.cx) continue; const q = G.project(...cxPos(x.k)); if (q[0] < x0 || q[0] > x1 || q[1] < y0 || q[1] > y1) continue; const ok = x.a <= lim; g.globalAlpha = 1; g.beginPath(); g.arc(q[0], q[1], ok ? 5.2 : 4.6, 0, 7); g.fillStyle = ok ? ink : sky.css(pal.land); g.fill(); g.lineWidth = 1.5; g.strokeStyle = ok ? sky.css(pal.bg) : ink; g.stroke(); } const bgc = sky.css(w > .5 ? pal.bg : pal.land);
     g.font = `${fs}px ${FONT()}`; g.textAlign = "left";
@@ -275,9 +275,9 @@ A.redrawStrip = drawStrip;
 // ---------- numbers
 let shownN = -1, lastMin = -1;
 export function numbers() {
-  const z = A.t(), m = Math.floor(S.m) % 1440; const key = [A.lang, m, A.count, S.lim, S.cx, S.hide, S.pick, S.step, S.tool, S.ch, !!S.game, !!S.follow, S.playing, drag.strip].join(); if (key === shownN) return; shownN = key;
+  const z = A.t(), m = Math.floor(S.m) % 1440; const key = [A.lang, m, A.count, S.lim, S.cx, S.hide, S.pick, A.ui?.showPlaces?.(), S.step, S.tool, S.ch, !!S.game, !!S.follow, S.playing, drag.strip].join(); if (key === shownN) return; shownN = key;
   $("#clock").innerHTML = z.clock(m); const st = $("#strip"); st.setAttribute("aria-valuenow", m); st.setAttribute("aria-valuetext", z.slider(z.time(m), A.count, A.cxName[S.cx]));
-  const p = A.homes / HM.total * 100, ptxt = p >= 9.95 ? Math.round(p) : p.toFixed(1); $("#ans").hidden = S.hide || S.pick || S.step === 6; const pl = S.step === 1 && !S.pick && A.ui?.places ? A.ui.places() : null; $("#ans b").textContent = pl ? pl.n : A.count; $("#ans .u").textContent = pl ? z.ans1(pl.of) : z.ans(A.count); $("#ans .h").textContent = pl ? z.ans1b(A.count) : A.phone() ? z.homesShort(ptxt) : z.homes(ptxt);
+  const p = A.homes / HM.total * 100, ptxt = p >= 9.95 ? Math.round(p) : p.toFixed(1); $("#ans").hidden = S.hide || S.pick || S.step === 6; const pl = A.ui?.showPlaces?.() ? A.ui.places() : null; $("#ans b").textContent = pl ? pl.n : A.count; $("#ans .u").textContent = pl ? z.ans1(pl.of) : z.ans(A.count); $("#ans .h").textContent = pl ? z.ans1b(A.count) : A.phone() ? z.homesShort(ptxt) : z.homes(ptxt);
   let bm = -1; if (S.step === 0 && !S.game && !S.follow && !S.tool && !S.playing && !drag.strip) { const base = A.count; let bv = Math.max(base * 1.15, base + 5); for (let q = 1; q <= 15; q++) { const c = A.countAt(S.cx, (m + q) % 1440); if (c > bv) { bv = c; bm = (m + q) % 1440; } } if (bm >= 0) { $("#ans .w").dataset.v = bm; $("#ans .w").textContent = z.again1(z.time(bm), bv); } } $("#ans .w").hidden = bm < 0;
 }
 A.numbers = () => { shownN = -1; numbers(); };

@@ -186,7 +186,7 @@ STEP.group = stage => {
       if (rl) rl.place(p ? 10 : 0, ly + lh + gap, p ? W - 20 : W, rh);
     },
     refresh() {
-      if (!ok || !this.b) return; const b = this.b; let i = idx(), s = scr(pos[i]); const pin = st.done.group; who.style.display = rl ? 'none' : ''; who.classList.toggle('pin', pin); if (pin) { i = 4; s = scr(pos[4]); } const R = b.hh * .19, px = O.edgeStretch(Math.atan(pos[i] / D0)); put(ringEl, -R * px, -R, 2 * R * px, 2 * R); who.style.left = b.x + s[0] + 'px'; who.style.top = b.y + s[1] + 'px'; arr.style.top = -R - (phone() ? 26 : 34) + 'px'; arr.style.left = Math.min(0, b.w - s[0] - 40) + 'px'; arr.textContent = pin ? T.pc(edgeOf(4)) : (pos[i] > 100 ? '← ' : '') + T.s4.drag;
+      if (!ok || !this.b) return; const b = this.b; let i = idx(), s = scr(pos[i]); const pin = !!st.done.group; who.style.display = rl ? 'none' : ''; who.classList.toggle('pin', pin); if (pin) { i = 4; s = scr(pos[4]); } const R = b.hh * .19, px = O.edgeStretch(Math.atan(pos[i] / D0)); put(ringEl, -R * px, -R, 2 * R * px, 2 * R); who.style.left = b.x + s[0] + 'px'; who.style.top = b.y + s[1] + 'px'; arr.style.top = -R - (phone() ? 26 : 34) + 'px'; arr.style.left = Math.min(0, b.w - s[0] - 40) + 'px'; arr.textContent = pin ? T.pc(edgeOf(4)) : (pos[i] > 100 ? '← ' : '') + T.s4.drag;
       const own = Math.max(0, pulled(gl.heads.honey, pos[idx()], D())); loupes.forEach((l, k) => { const v = rl ? edgeOf(k ? 4 : 0) : own; l.cap.innerHTML = rl ? `<b>${T.pc(v)}</b><br>${T.s4b.who[k]}` : T.s4.who; });
       if (rl) meter(null); else meter(T.p0(own), T.s4.cap); ph.setAttribute('role', 'img'); ph.setAttribute('aria-label', T.s4.do);
     }

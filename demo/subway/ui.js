@@ -66,7 +66,9 @@ export function initUI(A, core) {
   ui.tripMin = tripMin; const work = () => S.dest >= 0 ? S.dest : S.cx === A.byId("631") ? A.byId("R20") : A.byId("631");
   const clk = m => z().time(m);
   // step 3: the sharpest minute of this station's night, and which train is missed
-  ui.sharp = () => { const v = A.countsFor(S.cx); let x = -1, at = 0; for (let m = 0; m < 300; m++) if (v[m] - v[m + 1] > x) { x = v[m] - v[m + 1]; at = m; } const miss = E.missed(net, S.cx, at); return { at, a: v[at], b: v[at + 1], miss }; };
+  // the minute of the night (0 to 5 a.m.) that costs most: in places everyone knows, and where none is lost, in stations
+  ui.sharp = () => { const pc = [], sc = []; for (let m = 0; m <= 300; m++) { E.reach(net, Rx, S.cx, m * 60, 1800, { countOnly: true }); sc.push(Rx.count); let n = 0; for (const [k] of PLACES) if (A.arrCx(k, Rx.arr) <= 1800) n++; pc.push(n); } let at = 0, best = -1; for (let m = 0; m < 300; m++) { const d = Math.max(0, pc[m] - pc[m + 1]) * 1000 + (sc[m] - sc[m + 1]); if (d > best) { best = d; at = m; } } const u = pc[at] > pc[at + 1], v = u ? pc : sc; return { at, a: v[at], b: v[at + 1], places: u, miss: E.missed(net, S.cx, at) }; };
+  ui.showPlaces = () => (S.step === 1 && !S.pick) || (S.step === 3 && !!L.sh?.places);
   // step 5: mean minutes from a to b over an hour
   const meanTrip = (a, b, h) => { let t = 0; for (let m = h * 60; m < h * 60 + 60; m += 5) t += tripMin(a, b, m) / 12; return t / 60; };
   ui.homes2 = () => { const key = [S.cx, S.alt, work()].join(); if (L.h2key !== key) { L.h2key = key; const w = work(); L.h2 = { A: [meanTrip(S.cx, w, 8), meanTrip(w, S.cx, 0)], B: [meanTrip(S.alt, w, 8), meanTrip(w, S.alt, 0)] }; } return L.h2; };
@@ -80,7 +82,7 @@ export function initUI(A, core) {
       return `<p class="sm">${z().toFrom(name(S.cx), name(S.dest))}</p><p class="res"><b>${t}</b><span>${z().w3(L.g2 - t, clk(510 + t))}</span></p>${b.html}<p class="bd">${z().w4(rd, t - rd, t - rd > t * .22)}</p>${bar(2, true)}`;
     },
     3: () => {
-      const x = L.sh; if (!x) return ""; const o = x.a - x.b; if (!L.g3) { const mid = Math.round((x.a + x.b) / 2), op = [...new Set([x.a, mid, x.b])].sort((p, q) => S.cx % 2 ? p - q : q - p); return `<p class="big s">${z().m1(clk(x.at), x.a)}</p><p class="bd">${z().m2}</p>${opt("g3", op.map(v => [v, v]))}${bar(3, false)}`; }
+      const x = L.sh; if (!x) return ""; const o = x.a - x.b; if (!L.g3) { const mid = Math.round((x.a + x.b) / 2), op = [...new Set([x.a, mid, x.b])].sort((p, q) => S.cx % 2 ? p - q : q - p); return `<p class="big s">${z().m1(clk(x.at), x.a, x.places)}</p><p class="bd">${z().m2}</p>${opt("g3", op.map(v => [v, v]))}${bar(3, false)}`; }
       const w = work(), t0 = tripMin(S.cx, w, x.at), t1 = tripMin(S.cx, w, x.at + 1), mn = v => Math.ceil(v / 60); return `<p class="big">${z().m4(x.a, x.b)}</p>${w !== S.cx && t1 < 3 * 3600 && mn(t1) > mn(t0) ? `<p class="res"><b>${mn(t0)} → ${mn(t1)}</b><span>${z().m6(name(w))}</span></p>` : ""}<p class="bd">${x.miss ? z().m5(A.letters([x.miss.r]), clk(x.at), clk(x.miss.next / 60)) : ""}</p><div class="choice"><button type="button" data-a="late" data-v="0" aria-pressed="${S.m === x.at}" class="${S.m === x.at ? "on" : ""}">${clk(x.at)}</button><button type="button" data-a="late" data-v="1" aria-pressed="${S.m !== x.at}" class="${S.m === x.at + 1 ? "on" : ""}">${clk(x.at + 1)}</button></div>${bar(3, true)}`;
     },
     4: () => ui.racePanel() + bar(4, !!L.s4),
@@ -88,7 +90,7 @@ export function initUI(A, core) {
       if (S.alt < 0) return `<p class="big">${z().h1}</p><p class="sm">${z().h1b(name(S.cx), name(work()))}</p>${box()}${bar(5, false)}`;
       const h = ui.homes2(), big = x => x < 180 ? n0(x) : "—"; if (!isFinite(h.A[1] + h.B[1]) || h.B[1] > 180 || h.A[1] > 180) return `<p class="big s">${z().toNone}</p><p class="sm">${z().sir}</p><div class="row"><button type="button" data-a="again5">${z().other1}</button></div>${bar(5, true)}`;
       if (!L.g5) return `<p class="big s">${z().h2(name(work()))}</p>${opt("g5", [["A", name(S.cx)], ["B", name(S.alt)]])}${bar(5, false)}`;
-      return `<p class="big s">${z().h3(h, name(S.cx), name(S.alt), L.g5)}</p><table class="two"><tr><th></th><th>${z().hDay}</th><th>${z().hNight}</th></tr><tr><td>${name(S.cx)}</td><td>${big(h.A[0])}</td><td>${big(h.A[1])}</td></tr><tr><td>${name(S.alt)}</td><td>${big(h.B[0])}</td><td>${big(h.B[1])}</td></tr></table><p class="bd">${z().h4(Math.abs(n0(h.A[0]) - n0(h.B[0])), Math.abs(n0(h.A[1]) - n0(h.B[1])))}</p><div class="row"><button type="button" data-a="again5">${z().other1}</button></div>${bar(5, true)}`;
+      return `<p class="big s">${z().h3(h, name(S.cx), name(S.alt), L.g5)}</p><table class="two"><tr><th></th><th>${z().hDay}</th><th>${z().hNight}</th></tr><tr><td>${name(S.cx)}</td><td>${big(h.A[0])}</td><td>${big(h.A[1])}</td></tr><tr><td>${name(S.alt)}</td><td>${big(h.B[0])}</td><td>${big(h.B[1])}</td></tr></table><p class="bd">${z().h4(Math.abs(n0(h.A[0]) - n0(h.B[0])), Math.abs(n0(h.A[1]) - n0(h.B[1])))}</p><div class="row again"><button type="button" data-a="again5">${z().other1}</button></div>${bar(5, true)}`;
     },
   };
   ui.chgRow = () => `<div class="choice" role="group">${[0, 1, 2, 9].map((k, i) => `<button type="button" data-a="ch" data-v="${k}" aria-pressed="${S.ch === k}" class="${S.ch === k ? "on" : ""}">${z().chg[i]}</button>`).join("")}</div>`;

@@ -15,7 +15,7 @@ export function initMore(A, core, ui) {
   A.rank = rank;
   ui.endPanel = () => {
     const T = z(), x = ui.L.sh || (ui.L.sh = ui.sharp()), w = S.dest, h = S.alt >= 0 && w >= 0 ? ui.homes2() : null, r = (a, b) => `<li><b>${a}</b><span>${b}</span></li>`, ok = h && h.A[1] < 180 && h.B[1] < 180;
-    return `<ul class="rules">${r(T.r1, T.r1b(A.tag(S.cx), T.time(x.at), x.a, x.b))}${r(T.r2, T.r2b)}${r(T.r3, ok ? T.r3b(A.tag(S.cx), A.tag(S.alt), h.A.map(Math.round), h.B.map(Math.round)) : T.r3c)}</ul><div class="row"><button type="button" class="main" data-a="keep">${T.tools.keep}</button><button type="button" data-a="game">${T.tools.game}</button><button type="button" data-a="free">${T.free}</button></div>`;
+    return `<ul class="rules">${r(T.r1, T.r1b(A.tag(S.cx), T.time(x.at), x.a, x.b, x.places))}${r(T.r2, T.r2b)}${r(T.r3, ok ? T.r3b(A.tag(S.cx), A.tag(S.alt), h.A.map(Math.round), h.B.map(Math.round)) : T.r3c)}</ul><div class="row"><button type="button" class="main" data-a="keep">${T.tools.keep}</button><button type="button" data-a="game">${T.tools.game}</button><button type="button" data-a="free">${T.free}</button></div>`;
   };
   const swing = (v = A.countsFor(S.cx)) => [[420, 1380], [0, 300]].map(([a, b]) => { let x = 0, at = a; for (let m = a; m < b; m++) if (v[m] - v[m + 1] > x) { x = v[m] - v[m + 1]; at = m; } return [at, v[at], v[at + 1]]; });   // the sharpest minute between 7 a.m. and 11 p.m., and between midnight and 5
   A.swing = swing;
