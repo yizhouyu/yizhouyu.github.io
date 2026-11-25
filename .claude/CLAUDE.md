@@ -19,9 +19,8 @@ blog/BLOG_TEMPLATE.md   Post skeleton + checklist
 data/                   profile.jpg (original), profile-1400.jpg (web copy used on the site)
 tools/cjk_subset.py     Regenerates the Chinese font subsets
 tools/verify_bodies.py  Checks post bodies are unchanged vs a git revision
-tools/protect.mjs       Builds password-protected pages from _private/ (see tools/PROTECT.md)
+tools/protect.mjs       Builds password-protected pages from ../private-pages (see tools/PROTECT.md)
 secret/                 Generated ciphertext of a protected test page; never hand-edit
-_private/               Plaintext sources + passwords of protected pages; git-ignored, never commit
 404.html                Custom not-found page (GitHub Pages serves it for any missing path)
 sitemap.xml, robots.txt Add each new post to sitemap.xml
 blog/feed.xml           RSS feed, generated from blog/index.html by tools/build_feed.py (rerun after adding a post)
@@ -56,7 +55,7 @@ Google tag `G-T39LJ72QFL`, Cloudflare beacon (token `8502e35b873b4becad641200564
 
 The repo is public, so private pages are encrypted locally and only ciphertext is committed; the browser decrypts after the password is typed. Full guide: `tools/PROTECT.md`.
 
-- Source: `_private/<page>/index.html` (+ assets), password in `_private/passwords.json`. Both are git-ignored; never commit, quote or copy their contents anywhere in the repo.
+- Source: `vault/<page>/index.html` (+ assets) in the private repo `yizhouyu/private-pages`, checked out beside this repo; passwords in its git-ignored `passwords.json`. Never copy or quote their contents into this repo.
 - Build: `node tools/protect.mjs` (no dependencies; verifies itself after every build). It writes `<page>/index.html` (gate page with the encrypted HTML inline) and one `<id>.enc` per asset. Commit that folder; never edit it by hand.
 - The gate template is `tools/protect-gate.html` + `tools/protect-runtime.js`; after changing either, rebuild every page.
 - Protected pages are exempt from the analytics, link-preview, sitemap, feed and CJK-subset rules: no third-party scripts on them, `noindex`, and do not add them to `sitemap.xml` or link them from public pages.

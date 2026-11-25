@@ -1,25 +1,28 @@
 #!/usr/bin/env node
 /* Password-protected pages for a public static site. See tools/PROTECT.md.
 
-   node tools/protect.mjs                 build every page in _private/passwords.json, then verify
+   node tools/protect.mjs                 build every page in passwords.json, then verify
    node tools/protect.mjs <page> ...      build and verify only these pages
    node tools/protect.mjs --verify [page] verify the built pages without writing anything
    node tools/protect.mjs --restore <page> [--force]
-                                          decrypt the published page back into _private/<page>/
+                                          decrypt the published page back into vault/<page>/
 
-   Sources live in _private/<page>/ (git-ignored, never committed). The output in <page>/ holds
-   only ciphertext: PBKDF2-SHA256 (600k iterations, per-page salt) -> AES-256-GCM. No dependencies. */
+   Sources live OUTSIDE this public repo, in the private repo checked out next to it:
+   ../private-pages/vault/<page>/ (override with PRIVATE_PAGES=/path/to/private-pages). passwords.json
+   sits in that repo's root and is git-ignored there too. The output in <page>/ holds only
+   ciphertext: PBKDF2-SHA256 (600k iterations, per-page salt) -> AES-256-GCM. No dependencies. */
 
 import { execFileSync } from 'node:child_process';
 import { createCipheriv, createDecipheriv, createHash, createHmac, pbkdf2Sync, randomBytes, webcrypto } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const PRIVATE = '_private';
-const PASSWORDS = `${PRIVATE}/passwords.json`;
+const HOME = privateHome();                         // the private repo
+const VAULT = join(HOME, 'vault');
+const PASSWORDS = join(HOME, 'passwords.json');
 const ITER = 600_000;
 const MARKER = '<meta name="generator" content="yzy-vault">';
 const DATA_RE = /<script type="application\/json" id="vault-data">([\s\S]*?)<\/script>/;
@@ -58,23 +61,34 @@ function open(key, blob, page, label) {
   } catch { return null; }
 }
 
-/* ---------- safety: the plaintext must never be committable ---------- */
-function git(args, opts = {}) {
-  return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'], ...opts });
+/* ---------- safety: the plaintext must never be committable to this public repo ---------- */
+function git(args, cwd = ROOT) {
+  return execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 }
-function assertIgnored(paths) {
-  if (git(['ls-files', '--', PRIVATE]).trim()) fail(`${PRIVATE}/ has files tracked by git. Run: git rm -r --cached ${PRIVATE}`);
-  let ignored = [];
-  try { ignored = git(['check-ignore', '--stdin', '-z'], { input: paths.join('\0') }).split('\0').filter(Boolean); }
-  catch (e) { if (e.status !== 1) throw e; }       // exit 1 = nothing is ignored
-  const loose = paths.filter((p) => !ignored.includes(p));
-  if (loose.length) fail(`Not git-ignored: ${loose.slice(0, 3).join(', ')}${loose.length > 3 ? ' …' : ''}\nAdd "${PRIVATE}/" to .gitignore first. Refusing to run.`);
+function tryGit(args, cwd) { try { return git(args, cwd); } catch { return null; } }
+/* ../private-pages beside the main checkout, also when run from another git worktree. */
+function privateHome() {
+  if (process.env.PRIVATE_PAGES) return resolve(process.env.PRIVATE_PAGES);
+  const common = tryGit(['rev-parse', '--path-format=absolute', '--git-common-dir'], ROOT);
+  return join(dirname(common ? dirname(common) : ROOT), 'private-pages');
+}
+function assertPrivate() {
+  if (!existsSync(HOME)) fail(`${HOME} not found. Run: gh repo clone yizhouyu/private-pages ${HOME}`);
+  const commonDir = (cwd) => tryGit(['rev-parse', '--path-format=absolute', '--git-common-dir'], cwd);
+  const here = commonDir(ROOT), there = commonDir(HOME);
+  if (!there) fail(`${HOME} is not a git repository.`);
+  if (realpathSync(here) === realpathSync(there)) fail(`${HOME} belongs to this public repository. Refusing to run.`);
+  const real = realpathSync(HOME);
+  for (const root of [realpathSync(ROOT), dirname(realpathSync(here))]) if (real === root || real.startsWith(root + '/')) fail(`${HOME} is inside the public repository folder. Refusing to run.`);
+  if (git(['ls-files', '--', '_private', 'vault', 'passwords.json'])) fail('This public repository tracks private sources (_private/, vault/ or passwords.json). Remove them first.');
+  if (git(['ls-files', '--', 'passwords.json'], HOME)) fail('passwords.json is tracked by git in the private repo. Run: git rm --cached passwords.json');
+  if (tryGit(['check-ignore', '-q', 'passwords.json'], HOME) === null) fail(`passwords.json is not git-ignored in ${HOME}. Refusing to run.`);
 }
 
 function loadPasswords() {
-  if (!existsSync(abs(PASSWORDS))) fail(`Missing ${PASSWORDS}. Create it as {"<page>": "<password>"}; the sources go in ${PRIVATE}/<page>/index.html.`);
+  if (!existsSync(PASSWORDS)) fail(`Missing ${PASSWORDS}. Create it as {"<page>": "<password>"}; the sources go in ${VAULT}/<page>/index.html.`);
   let all;
-  try { all = JSON.parse(read(PASSWORDS).toString('utf8')); } catch (e) { fail(`${PASSWORDS} is not valid JSON: ${e.message}`); }
+  try { all = JSON.parse(readFileSync(PASSWORDS, 'utf8')); } catch (e) { fail(`${PASSWORDS} is not valid JSON: ${e.message}`); }
   for (const [page, pw] of Object.entries(all)) {
     if (!PAGE_RE.test(page)) fail(`Bad page name "${page}" in ${PASSWORDS} (use lowercase letters, digits, "-", "/").`);
     if (typeof pw !== 'string' || !pw) fail(`Password for "${page}" must be a non-empty string.`);
@@ -115,10 +129,9 @@ function gateHtml(cfg) {
 
 /* ---------- build ---------- */
 function build(page, password) {
-  const src = abs(PRIVATE, page), out = abs(page);
-  if (!existsSync(join(src, 'index.html'))) fail(`Missing ${PRIVATE}/${page}/index.html`);
+  const src = join(VAULT, page), out = abs(page);
+  if (!existsSync(join(src, 'index.html'))) fail(`Missing ${VAULT}/${page}/index.html`);
   const names = walk(src);
-  assertIgnored(names.map((n) => `${PRIVATE}/${page}/${n}`));
 
   const old = readGate(page);
   if (existsSync(out) && !old) fail(`/${page}/ already exists and was not made by this tool. Pick another page name.`);
@@ -226,7 +239,7 @@ async function verify(page, password) {
   ok('tampered data fails');
 
   /* Decrypted output equals the sources, byte for byte. */
-  const src = abs(PRIVATE, page);
+  const src = join(VAULT, page);
   const haveSrc = existsSync(join(src, 'index.html'));
   const sources = new Map();
   if (haveSrc) {
@@ -266,9 +279,8 @@ async function verify(page, password) {
 
 /* ---------- restore: the published ciphertext doubles as a backup of the sources ---------- */
 async function restore(page, password, force) {
-  const dest = abs(PRIVATE, page);
-  if (existsSync(dest) && readdirSync(dest).length && !force) fail(`${PRIVATE}/${page}/ is not empty. Add --force to overwrite.`);
-  assertIgnored([`${PRIVATE}/${page}/index.html`]);
+  const dest = join(VAULT, page);
+  if (existsSync(dest) && readdirSync(dest).length && !force) fail(`${dest}/ is not empty. Add --force to overwrite.`);
   const { main, files } = await decryptPage(page, password);
   const put = (name, bytes) => { const f = join(dest, name); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, bytes); };
   put('index.html', main.html);
@@ -276,7 +288,7 @@ async function restore(page, password, force) {
     if (name.split('/').some((s) => !s || s === '..' || s.startsWith('.'))) fail(`Refusing odd file name "${name}".`);
     put(name, bytes);
   }
-  console.log(`restored ${PRIVATE}/${page}/  (${files.size + 1} file(s))`);
+  console.log(`restored ${dest}/  (${files.size + 1} file(s))`);
 }
 
 /* ---------- cli ---------- */
@@ -288,11 +300,11 @@ async function main() {
   if (flags.has('--help')) return console.log(readFileSync(fileURLToPath(import.meta.url), 'utf8').split('*/')[0].replace(/^#!.*\n\/\* ?/, ''));
   for (const p of pages) if (!PAGE_RE.test(p)) fail(`Bad page name "${p}".`);
 
-  assertIgnored([PASSWORDS, `${PRIVATE}/.probe`]);
+  assertPrivate();
 
   if (flags.has('--restore')) {
     if (pages.length !== 1) fail('Usage: node tools/protect.mjs --restore <page> [--force]');
-    let pw = existsSync(abs(PASSWORDS)) ? loadPasswords()[pages[0]] : undefined;
+    let pw = existsSync(PASSWORDS) ? loadPasswords()[pages[0]] : undefined;
     pw ??= process.env.VAULT_PASSWORD;
     if (!pw) {
       const rl = createInterface({ input: process.stdin, output: process.stderr });

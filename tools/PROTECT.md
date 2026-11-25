@@ -2,16 +2,16 @@
 
 这个网站是公开仓库上的纯静态站，没有服务器，所以「用 JS 判断密码再显示」是假保护。这里的做法是：页面内容在本机用密码加密，进仓库的只有密文；打开页面时在浏览器里输入密码，本地解密。
 
-- 明文源文件：`_private/<页面名>/`（已在 `.gitignore` 里，永远不提交）
-- 密码：`_private/passwords.json`（同样不提交）
+- 明文源文件：在另一个**私有**仓库 `yizhouyu/private-pages` 的 `vault/<页面名>/`，检出在本仓库旁边（`../private-pages`，也可以用环境变量 `PRIVATE_PAGES` 指定）
+- 密码：`private-pages/passwords.json`（被忽略，私有仓库也不提交；请另存一份到密码管理器）
 - 构建工具：`node tools/protect.mjs`（Node 自带的 crypto，不用装任何依赖）
 - 产物：仓库根目录的 `<页面名>/`，里面只有一个门页 `index.html` 和若干 `.enc` 密文，这个目录要提交
 
 ## 加一个新页面（三步）
 
-1. 写页面：新建 `_private/<页面名>/index.html`，图片等资源放在同一个文件夹里。
-2. 设密码：在 `_private/passwords.json` 里加一行，例如 `"diary": "四个以上随机词组成的长口令"`。
-3. 构建并发布：
+1. 写页面：新建 `../private-pages/vault/<页面名>/index.html`，图片等资源放在同一个文件夹里。
+2. 设密码：在 `../private-pages/passwords.json` 里加一行，例如 `"diary": "四个以上随机词组成的长口令"`。
+3. 在本仓库构建并发布（源文件另外在 `private-pages` 里提交）：
 
    ```bash
    node tools/protect.mjs
@@ -52,19 +52,19 @@
 
 ## 改内容、改密码、删页面
 
-- 改内容：改 `_private/<页面名>/` 里的文件，再跑 `node tools/protect.mjs`，提交并 push。没变的文件不会重新加密，所以 diff 是干净的。
-- 改密码：改 `_private/passwords.json` 里那一行，再构建、提交、push。所有「记住」过的设备会自动失效，需要重新输入；`vault.store` 存的数据也随旧密钥作废。注意旧密文还留在 git 历史里，旧密码依然能解开旧版本，所以改密码保护不了已经发布过的内容。
-- 删页面：`git rm -r <页面名>/`，再删掉 `_private/<页面名>/` 和 `passwords.json` 里那一行。同样，git 历史里的密文还在。
+- 改内容：改 `private-pages/vault/<页面名>/` 里的文件，再跑 `node tools/protect.mjs`，提交并 push。没变的文件不会重新加密，所以 diff 是干净的。
+- 改密码：改 `private-pages/passwords.json` 里那一行，再构建、提交、push。所有「记住」过的设备会自动失效，需要重新输入；`vault.store` 存的数据也随旧密钥作废。注意旧密文还留在 git 历史里，旧密码依然能解开旧版本，所以改密码保护不了已经发布过的内容。
+- 删页面：`git rm -r <页面名>/`，再删掉 `private-pages/vault/<页面名>/` 和 `passwords.json` 里那一行。同样，git 历史里的密文还在。
 
 ## 换电脑，或者源文件丢了
 
-已发布的密文就是备份。只要记得密码：
+先 `gh repo clone yizhouyu/private-pages`（放在本仓库旁边），再从密码管理器把 `passwords.json` 补回来。如果私有仓库里没有，已发布的密文也能恢复，只要记得密码：
 
 ```bash
 node tools/protect.mjs --restore <页面名>
 ```
 
-会把页面解密回 `_private/<页面名>/`。如果 `_private/` 丢了而且密码也忘了，内容就永久找不回来了。
+会把页面解密回 `private-pages/vault/<页面名>/`。
 
 ## 门页上的「记住」
 
@@ -82,7 +82,7 @@ node tools/protect.mjs --restore <页面名>
 
 - **强度完全取决于密码。** 密文是公开的，任何人都能下载后离线暴力破解，门页上的「错 3 次锁定」管不到这种情况，也没法封人。PBKDF2 60 万次迭代只是让每次尝试慢一点。真正的页面要用长口令（4 个以上随机词）；`/secret` 用的短密码只适合测试，几秒钟就能被猜出来。
 - **公开可见的信息：** 这个页面存在、它的网址、加密文件的个数和大小、更新时间。文件名和内容不可见（`.enc` 文件名是随机样子的 ID）。
-- **发布过就收不回。** 仓库和它的 git 历史是公开的，密文一旦 push 就应当视为永久公开，将来密码泄露或被破解，旧内容也会暴露。真正敏感的东西（证件、密钥、财务账号）不要放。
+- **发布过就收不回。** 仓库和它的 git 历史是公开的，密文一旦 push 就应当视为永久公开，将来密码泄露或被破解，旧内容也会暴露。真正私密的页面不要用这套，放到需要邮箱登录的 `private.yizhouyu.dev`（见 `private-pages` 仓库）；证件、密钥、财务账号哪里都不要放。
 - **记住的密钥放在浏览器里。** 能在 yizhouyu.dev 上运行的脚本（包括其它页面上的统计脚本）、浏览器扩展、能碰这台电脑的人，都读得到。公用电脑不要勾「记住」。
 - **只防「看」，不防「改」。** 能往仓库里写东西的人可以把门页换成偷密码的版本。
 - **托管方在信任范围内。** 页面由 GitHub Pages 提供，再经 Cloudflare 代理。Cloudflare 会往每个 HTML 页面（包括门页）末尾自动注入它自己的防机器人脚本（`/cdn-cgi/challenge-platform/...`），GitHub 和 Cloudflare 在技术上都有能力改动页面。这是用它们托管的前提，这套工具挡不了；想去掉那段注入，要在 Cloudflare 后台关掉对应的 Bot / JavaScript Detections 功能。
@@ -95,7 +95,7 @@ node tools/protect.mjs --restore <页面名>
 | `tools/protect.mjs` | 构建、验证、恢复 |
 | `tools/protect-gate.html` | 门页模板（样式跟主站一致） |
 | `tools/protect-runtime.js` | 门页里的解密逻辑和 `window.vault` |
-| `_private/` | 明文和密码，不进仓库 |
+| `../private-pages/` | 私有仓库：明文（`vault/`）和本机密码文件 |
 | `<页面名>/` | 生成的密文目录，不要手改 |
 
 加密参数：PBKDF2-SHA256，600,000 次迭代，每页 16 字节随机 salt，派生 256 位密钥；AES-256-GCM，每个文件独立的随机 IV，并把页面名和文件名作为附加认证数据绑定。
