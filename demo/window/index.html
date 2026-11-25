@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>When does the sun come in this window?</title>
+<meta name="description" content="Pick a window in Manhattan and see when the sun comes in, all year, and which building takes it.">
+<meta property="og:title" content="When does the sun come in this window? / 这扇窗几点有太阳？">
+<meta property="og:description" content="Drag the sun through a day and a year. See which building takes the light. 拖动太阳，看看是哪栋楼挡了光。">
+<meta property="og:image" content="https://yizhouyu.dev/demo/window/cover.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#dadfd6">
+<link rel="icon" href="favicon.svg">
+<link rel="preload" href="fonts/marcellus.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script>try{var t=localStorage.getItem('window.theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<header>
+  <a id="home" href="/demo/"></a>
+  <nav><button id="aboutb"></button><button id="theme" class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" class="f"/></svg></button><button id="lang"></button></nav>
+</header>
+<main>
+  <section id="story"><div id="head" aria-live="polite"></div><div id="acts"></div></section>
+  <section id="stage">
+    <div id="frame">
+      <div id="pic"><canvas id="gl" tabindex="0" role="img"></canvas><canvas id="sky" role="img" hidden></canvas><canvas id="fade" aria-hidden="true"></canvas><canvas id="over" aria-hidden="true"></canvas><div id="pin" hidden></div><div id="load"><i></i><span></span></div></div>
+      <div id="floors" hidden><p></p><canvas id="flo" role="slider" tabindex="0" aria-orientation="vertical"></canvas></div>
+    </div>
+    <div id="cap"><div id="tabs" role="tablist"><button data-v="room" role="tab"></button><button data-v="sky" role="tab"></button><button data-v="city" role="tab"></button></div><p id="note" aria-live="polite"></p></div>
+    <div id="dayrow"><button id="play" class="ic"></button><canvas id="strip" role="slider" tabindex="0"></canvas></div>
+  </section>
+  <section id="yearbox"><canvas id="year" role="slider" tabindex="0"></canvas><div id="key"></div></section>
+  <section id="tools" role="toolbar"></section>
+</main>
+<dialog id="dlg"><button class="x" data-x></button><div id="dlgt"></div></dialog>
+<div id="toast" role="status" hidden></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
