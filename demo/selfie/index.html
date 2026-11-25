@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex"><meta name="theme-color" content="#c9c8c5" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#121110" media="(prefers-color-scheme: dark)">
+<title>Why does my face look big in selfies?</title>
+<meta name="description" content="Drag a phone away from a sculpture's face and watch the nose come back. Step back two steps, then zoom.">
+<meta property="og:title" content="Why does my face look big in selfies? · 自拍为什么脸大？"><meta property="og:description" content="Drag the phone away from the face and watch the nose come back."><meta property="og:type" content="website"><meta property="og:url" content="https://yizhouyu.dev/demo/selfie/"><meta property="og:image" content="https://yizhouyu.dev/demo/selfie/cover.jpg"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/bodoni.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="fonts/jost.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="style.css">
+<script>(function(){var d=document.documentElement;try{var q=new URLSearchParams(location.search).get("lang"),s=localStorage.getItem("demo.lang"),l=q||s||navigator.language||"en";d.lang=/^zh/i.test(l)?"zh-CN":"en";var t=localStorage.getItem("selfie.light");d.dataset.light=t||(matchMedia("(prefers-color-scheme: dark)").matches?"off":"on")}catch(e){d.dataset.light=matchMedia("(prefers-color-scheme: dark)").matches?"off":"on"}})()</script>
+</head>
+<body>
+<header class="top"><button class="t" id="about" type="button"></button><button class="t" id="light" type="button"></button><button class="t" id="lang" type="button"></button><a class="t" id="home" href="/demo/"></a></header>
+<main id="page">
+  <section class="say" id="say">
+    <p class="kick" id="kick"></p>
+    <h1 id="h1"></h1>
+    <p class="do" id="do"></p>
+    <div class="meter" id="meter"><b id="mBig"></b><span id="mCap"></span></div>
+    <div class="after" id="after" aria-live="polite"></div>
+    <div class="acts" id="acts"></div>
+  </section>
+  <section class="stage" id="stage"></section>
+</main>
+<canvas id="gl" aria-hidden="true"></canvas>
+<nav class="steps" id="steps"></nav>
+<div class="flash" id="flash" aria-hidden="true"></div>
+<dialog class="layer" id="aboutBox"><div class="sheet" id="aboutPage"></div></dialog>
+<p class="toast" id="toast" role="status"></p>
+<noscript><p style="padding:2em">This page needs JavaScript. / 这个页面需要 JavaScript。</p></noscript>
+<script type="module" src="js/app.js"></script>
+</body></html>
