@@ -19,11 +19,13 @@ export class Ruin {
   }
   get T() { return this.S.T.ruin; }
   get defText() { return this.T.def; }
+  ghost() { return this.free || this.ops.length ? null : [[.36, .5], [.62, .44], [.38, .54], [.64, .5], [.4, .6]]; }
   enter(q) {
+    this.free = true;
     if (q?.get?.("t") || q?.get?.("o")) {
-      try { if (q.get("t")) this.text = strUnpack(q.get("t")); if (LEVELS.includes(q.get("l"))) this.level = q.get("l"); this.ops = q.get("o") ? unpackOps(q.get("o")) : []; if (!encode(this.text ?? this.defText, this.level, { byte: true })) throw 0; this.shared = this.ops.length > 0; }
+      try { if (q.get("t")) this.text = strUnpack(q.get("t")); if (LEVELS.includes(q.get("l"))) this.level = q.get("l"); this.ops = q.get("o") ? unpackOps(q.get("o")) : []; if (!encode(this.text ?? this.defText, this.level, { byte: true })) throw 0; this.shared = this.ops.length > 0 && q.get("from") === "1"; }
       catch { this.text = null; this.level = "H"; this.ops = []; this.S.toast(this.T.linkBad); }
-    } else if (q?.text) { this.text = q.text; this.level = q.level || "Q"; this.ops = []; this.from = "make"; }
+    } else if (q?.text) { this.text = q.text; this.level = q.level || "Q"; this.ops = []; this.from = "make"; this.free = true; }
     this.make(); this.words();
   }
   leave() { this.burning = null; this.cut = null; this.dot = null; }
@@ -51,6 +53,7 @@ export class Ruin {
     this.S.mark(); this.render();
   }
   onDeath() {
+    if (!this.free) { this.free = true; this.firstKill = { n: this.ev.wrong.length, p: Math.round(this.ev.wrong.length / this.code.n ** 2 * 100), cause: this.ev.cause }; this.S.tick(); this.wonNow = true; setTimeout(() => this.S.mode === this && this.build()); } else if (this.game) this.S.tick();
     if (this.game === "few" && this.ev.cause !== "corners") { const n = this.ev.wrong.length, b = store.get("kill", 0); if (!b || n < b) store.set("kill", n); }
     this.S.finish("ruin");
   }
@@ -58,7 +61,7 @@ export class Ruin {
   add(op) { this.shared = false; this.ops.push(op); this.look.apply(op); this.probe.apply(op); this.changed(); this.S.save(); }
   grow(op, from) { this.look.apply(op, from); this.probe.apply(op, from); this.changed(); }
   undo() { if (!this.ops.length) return; this.ops.pop(); this.make(); this.S.save(); play.dot(); }
-  fresh() { this.ops = []; this.most = 0; this.shared = false; this.assist = false; this.make(); this.S.save(); this.S.hint(this.T.hintSheet); play.stick(); }
+  fresh() { this.ops = []; this.most = 0; this.shared = false; this.assist = false; this.make(); this.S.save(); this.wonNow = false; play.stick(); }
   tick(dt, now) {
     if (this.burning && now - (this.burnAt || 0) > 60) { this.burnAt = now; const o = this.burning, p = o.p[o.p.length - 1]; if (p[2] < .034) { o.p.push([p[0], p[1], quant(Math.min(.034, p[2] + .003))]); this.grow(o, o.p.length - 1); } play.crackle(); }
     if (this.due && now > this.due) { this.due = 0; this.check(); }
@@ -94,7 +97,7 @@ export class Ruin {
     if (this.stick) { const o = this.stick; this.stick = null; this.add(o); play.stick(); }
     if (this.cut) { const o = this.cut; this.cut = null; if (Math.hypot(o.x2 - o.x1, o.y2 - o.y1) > .06) { const dx = o.x2 - o.x1, dy = o.y2 - o.y1; Object.assign(o, { x1: quant(clamp(o.x1 - dx * 0, -.9, 1.9)), x2: quant(clamp(o.x1 + dx, -.9, 1.9)) }); this.add(o); play.cut(); } this.S.mark(); }
     this.op = this.burning = null; this.S.save(); this.due = this.due || performance.now();
-    if (!this.toolsOn) { this.toolsOn = true; this.build(); }
+    
   }
   hover(p) { const on = p && (this.tool === "s" || this.tool === "d") && p[0] > 0 && p[0] < 1 && p[1] > 0 && p[1] < 1; this.dot = on ? p : null; this.S.mark(); }
   key(k) {
@@ -127,7 +130,7 @@ export class Ruin {
   /* ---- words and controls ---- */
   words() {
     const t = this.T; if (this.text === null && !this.ops.length && this.code && this.code.text !== this.defText) this.make();
-    this.S.aria(t.canvas); if (!this.ops.length) this.S.hint(t.hintSheet); this.toolsOn = this.toolsOn || this.ops.length > 0 || this.S.phone; this.build();
+    this.S.aria(t.canvas); if (!this.ops.length) this.S.hint(""); this.toolsOn = this.toolsOn || this.ops.length > 0 || this.S.phone; this.build();
   }
   pick(k) { this.tool = k; this.dot = null; this.S.mark(); this.build(); if (this.S.phone) this.S.hint(this.T.toolHint[k]); }
   build() {
@@ -143,22 +146,22 @@ export class Ruin {
       el("div", { class: "field" }, el("label", {}, t.strength), ui.seg = el("div", { class: "seg", role: "radiogroup", "aria-label": t.strength })),
       el("div", { class: "field" }, el("label", {}, t.games), el("div", { class: "row", style: "margin-top:0" }, b(t.gameFew, () => this.play("few"), this.game === "few"), b(t.gameMost, () => this.play("most"), this.game === "most")), ui.rec = el("p", { class: "cap" })), el("p", { class: "cap", style: "margin:0" }, t.phoneMore));
     ui.txt.value = this.code.text;
-    S.ctl(ui.msg, ui.meter, this.toolsOn ? (this.open ? [ui.row, more] : [this.game === "few" ? null : ui.tools, ui.hint, ui.row]) : null);
-    if (S.phone && this.ops.length + (this.game ? 1 : 0)) S.hint(this.game ? "" : t.toolHint[this.tool]);
-    S.next(t.how, () => S.go("find")); this.render();
+    S.ctl(ui.msg, ui.meter, this.free ? (this.open ? [ui.row, more] : [this.game === "few" ? null : ui.tools, ui.hint, ui.row]) : null);
+    if (S.phone && this.free && this.ops.length + (this.game ? 1 : 0)) S.hint(this.game ? "" : t.toolHint[this.tool]);
+    S.next(S.T.backEnd, () => S.go("end"), true); this.render();
   }
   render() {
     const { ui, ev, code, S } = this, t = this.T; if (!ui || !ev || S.mode !== this) return;
     const n2 = code.n * code.n, w = ev.wrong.length, max = Math.max(...ev.used);
-    S.say(this.sayText(), { kick: this.game ? t.kickGame[this.game] : this.shared ? t.shared : "", title: !ev.alive ? t.titleDead : this.game === "few" ? t.titleFew(w) : this.game === "most" ? t.titleMost(w) : t.title });
+    S.say(this.sayText(), { kick: this.game ? t.kickGame[this.game] : this.shared ? t.shared : t.kick, title: !ev.alive ? t.titleDead : this.game === "few" ? t.titleFew(w) : this.game === "most" ? t.titleMost(w) : this.free ? t.titleFree : t.title, won: false, dead: !ev.alive });
     document.body.classList.toggle("dead", !ev.alive);
     const L = [...code.text], ok = ev.alive || this.assist;
     ui.msg.className = "msg" + (L.length > 60 ? " xl" : L.length > 20 ? " long" : "");
     ui.msg.replaceChildren(...this.map.letters.map(l => el("span", { class: !ok ? "gone" : l.cells.some(c => ev.set.has(c)) ? "fix" : "" }, l.ch)));
     ui.msg.setAttribute("aria-label", ok ? code.text : t.nothing);
     const rows = code.lay.blocks.length > 4 ? [Math.max(...ev.used)] : ev.used;
-    ui.meter.replaceChildren(...rows.map(u => el("div", { class: u > ev.t ? "over" : "" }, ...Array.from({ length: ev.t }, (_, i) => el("i", { class: i < u ? "on" : "" })))), el("p", {}, code.lay.nb > 1 ? t.meterMany(max, ev.t, code.lay.nb) : max > ev.t ? t.meterOver(max, ev.t) : t.meter(max, ev.t)));
-    S.ready(!ev.alive || ev.bad.size >= 6);
+    ui.meter.replaceChildren(...rows.map(u => el("div", { class: u > ev.t ? "over" : "" }, ...Array.from({ length: ev.t }, (_, i) => el("i", { class: i < ev.t - u ? "on" : "" })))), el("p", {}, code.lay.nb > 1 ? t.meterMany(Math.max(0, ev.t - max), ev.t, code.lay.nb) : max > ev.t ? t.meterOver(max, ev.t) : t.meter(ev.t - max, ev.t)));
+    
     if (ui.seg) ui.seg.replaceChildren(...[...LEVELS].map(l => { const v = this.atLevel(l); return el("button", { type: "button", role: "radio", "aria-checked": String(l === this.level), class: v === false ? "dead" : "", disabled: v === null, onclick: () => { this.level = l; this.make(); this.build(); S.save(); } }, t.lv[l], el("small", {}, (v === null ? t.tooLong : v ? t.alive : t.dead))); }));
     if (ui.rec) { const k = store.get("kill", 0), m = store.get("live", 0); ui.rec.textContent = t.rec(k, m); }
   }
@@ -169,12 +172,12 @@ export class Ruin {
   }
   sayText() {
     const t = this.T, ev = this.ev, w = ev.wrong.length; if (this.game === "most" && !ev.alive) return t.mostEnd(this.most || 0); if (this.game === "few" && !ev.alive && ev.cause !== "corners") return t.fewEnd(w, ev.cause);
-    if (!ev.alive && ev.cause === "corners") return t.lost + (this.assist ? " " + t.assisted : ` <button class="link" id="assist" type="button" onclick="__qr.mode.help()">${t.assist}</button>`);
-    if (!ev.alive) return t.cause[ev.cause](Math.max(...ev.used), ev.t); if (!w) return this.ops.length ? t.wasted : t.clean; return ev.bad.size ? t.still(w, ev.bad.size) : t.stillFree(w);
+    if (!ev.alive && ev.cause === "corners") return t.lost + (this.assist ? " " + t.assisted : this.free && !this.wonNow ? ` <button class="link" id="assist" type="button" onclick="__qr.mode.help()">${t.assist}</button>` : "");
+    if (!ev.alive) return t.cause[ev.cause](Math.max(...ev.used), ev.t, w, Math.round(w / this.code.n ** 2 * 100)); if (!w) return this.ops.length ? t.wasted : this.free ? t.cleanFree : t.clean; return ev.bad.size ? t.still(w, ev.bad.size) : t.stillFree(w);
   }
   help() { this.assist = true; this.S.mark(); this.render(); play.alive(); }
   type(v) { const text = v || " "; const e = encode(text, this.level, { byte: true }); this.ui.note.textContent = e ? "" : this.T.tooLongNote; if (!e) return; this.text = v || null; this.make(); this.render(); this.S.save(); }
-  play(g) { this.game = g; this.most = 0; if (g) { this.text = null; this.level = "H"; this.tool = g === "few" ? "d" : "s"; } this.open = false; this.toolsOn = true; this.fresh(); this.S.hint(""); this.build(); if (g && this.S.phone) scrollTo({ top: 0, behavior: "smooth" }); }
+  play(g) { this.game = g; this.free = true; this.most = 0; if (g) { this.text = null; this.level = "H"; this.tool = g === "few" ? "d" : "s"; } this.open = false; this.toolsOn = true; this.fresh(); this.S.hint(""); this.build(); if (g && this.S.phone) scrollTo({ top: 0, behavior: "smooth" }); }
   async pickLogo(f) { if (!f) return; try { this.img = await createImageBitmap(f); this.S.toast(this.T.logoIn); } catch { this.S.toast(this.T.logoBad); } }
   async keep() {
     this.due = 0; this.check(true); const t = this.T, ev = this.ev, total = this.code.n ** 2, url = await poster(this.S, { src: this.S.look, marks: c => this.paintMarks(c, false), head: ev.alive ? t.pAlive : t.pDead, lines: [t.pSaid(this.code.text.length > 40 ? this.code.text.slice(0, 39) + "…" : this.code.text), t.pCount(ev.wrong.length, total, Math.max(...ev.used), ev.t)] });

@@ -10,7 +10,7 @@
 <script>(function(){try{var q=new URLSearchParams(location.search).get("lang"),s=localStorage.getItem("demo.lang"),l=q||s||navigator.language||"en";document.documentElement.lang=/^zh/i.test(l)?"zh-CN":"en";var t=JSON.parse(localStorage.getItem("qr.lights")||"null");document.documentElement.dataset.lights=t===null?(matchMedia("(prefers-color-scheme: dark)").matches?"off":"on"):t}catch(e){document.documentElement.dataset.lights=matchMedia("(prefers-color-scheme: dark)").matches?"off":"on"}})()</script>
 </head>
 <body>
-<header class="top"><button class="t" id="about" type="button"></button><button class="t" id="mute" type="button"></button><button class="t" id="lights" type="button"></button><button class="t" id="lang" type="button"></button><a class="t" id="home" href="/demo/"></a></header>
+<header class="top"><button class="t" id="mute" type="button"></button><button class="t" id="lang" type="button"></button><a class="t" id="home" href="/demo/"></a></header>
 <main class="stage" id="stage">
   <section class="wall" id="wall">
     <div class="sheet" id="sheet"><div class="plane" id="plane"><canvas id="gl" aria-hidden="true"></canvas><canvas id="over" tabindex="0" role="img"></canvas></div><p class="touch" id="touch" aria-hidden="true"></p></div>

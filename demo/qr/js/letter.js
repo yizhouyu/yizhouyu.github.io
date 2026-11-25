@@ -7,14 +7,16 @@ const enc = new TextEncoder(), dec = new TextDecoder("utf-8", { fatal: true });
 // order inside a 2-wide column going up: right then left, biggest first
 const SPOT = [[1, 3], [0, 3], [1, 2], [0, 2], [1, 1], [0, 1], [1, 0], [0, 0]];
 export class Letter extends Chapter {
-  constructor(S) { super(S, "letter", ["c", "small", "own"], 2); }
-  begin() { this.bytes = this.name === "c" ? [65] : this.name === "small" ? [67] : this.own ? [...enc.encode(this.own)] : [65]; this.vis = this.bytes.map(b => bitsOf(b)); this.S.over.style.cursor = "pointer"; this.aim = this.name === "c" ? "C" : this.name === "small" ? "c" : ""; }
+  constructor(S) { super(S, "letter", ["c"], 0); }
+  begin() { this.missed = false; this.bytes = this.name === "c" ? [65] : this.name === "small" ? [67] : this.own ? [...enc.encode(this.own)] : [65]; this.vis = this.bytes.map(b => bitsOf(b)); this.S.over.style.cursor = "pointer"; this.aim = this.name === "c" ? "C" : this.name === "small" ? "c" : ""; }
   read(q) { const w = q?.get?.("w"); if (w) { try { this.own = [...decodeURIComponent(w)][0]; } catch { } } }
   extra() { return this.name === "own" && this.own ? "&w=" + encodeURIComponent(this.own) : ""; }
   get char() { try { const s = dec.decode(new Uint8Array(this.bytes)); return /[\p{C}]/u.test(s) ? "" : s; } catch { return ""; } }
-  controls() {
-    if (this.name !== "own") return []; const t = this.T, i = el("input", { id: "own", type: "text", maxlength: 4, autocomplete: "off", autocapitalize: "off", spellcheck: "false", "aria-label": t.typeOne, placeholder: t.typeOne, oninput: e => { const ch = [...e.target.value].pop(); if (!ch) return; e.target.value = ch; this.own = ch; this.bytes = [...enc.encode(ch)].slice(0, 4); this.vis = this.bytes.map(() => Array(8).fill(0)); this.pass(); this.S.paint(); this.S.save(); play.dot(); } });
-    i.value = this.own || ""; return [el("div", { class: "field" }, i)];
+  get wait() { return this.missed ? 1200 : 8000; }
+  ghost() { if (this.ok.has(0)) return null; const { u, x0, y0 } = this.geo(), p = [x0 + 1.5 * u, y0 + .5 * u]; return [p, p]; }
+  pass() { super.pass(); if (this.field) this.field.hidden = false; }
+  controls() { const t = this.T, i = el("input", { id: "own", type: "text", maxlength: 4, autocomplete: "off", autocapitalize: "off", spellcheck: "false", "aria-label": t.typeOne, placeholder: t.typeOne, oninput: e => { const ch = [...e.target.value].pop(); if (!ch) return; e.target.value = ch; this.own = ch; this.bytes = [...enc.encode(ch)].slice(0, 4); this.vis = this.bytes.map(() => Array(8).fill(0)); this.talk(); this.S.paint(); this.S.save(); play.dot(); } });
+    i.value = this.own || ""; this.field = el("div", { class: "field" }, el("label", { for: "own" }, t.tryOwn), i); this.field.hidden = !this.ok.has(0); return [this.field];
   }
   geo() { const k = this.bytes.length, u = k === 1 ? .142 : k === 2 ? .1 : k === 3 ? .082 : .062, gap = u * .7, w = k * 2 * u + (k - 1) * gap, x0 = k === 1 ? .12 : .5 - w / 2, y0 = k === 1 ? .16 : .52; return { k, u, gap, x0, y0 }; }
   draw(c) {
@@ -28,7 +30,7 @@ export class Letter extends Chapter {
   sum(b) { const on = SPOT.map((_, q) => 128 >> q).filter(w => b & w); return on.length ? on.join(" + ") + (on.length > 1 ? " = " + b : "") : "0"; }
   tick(dt) { let mv = false; this.bytes.forEach((b, i) => bitsOf(b).forEach((t, q) => { const d = t - this.vis[i][q]; if (Math.abs(d) > .004) { this.vis[i][q] += d * Math.min(1, dt / 70); mv = true; } else if (d) { this.vis[i][q] = t; mv = true; } })); return mv; }
   hit(p) { const { k, u, gap, x0, y0 } = this.geo(); for (let b = 0; b < k; b++) for (let q = 0; q < 8; q++) { const x = x0 + b * (2 * u + gap) + SPOT[q][0] * u, y = y0 + SPOT[q][1] * u; if (p[0] >= x && p[0] < x + u && p[1] >= y && p[1] < y + u) return [b, q]; } return null; }
-  toggle(b, q) { this.bytes[b] ^= 128 >> q; play.dot(); this.S.paint(); if (this.aim && this.char === this.aim) { play.alive(); this.pass(); } else if (this.name === "own") { this.own = this.char || this.own; const i = document.getElementById("own"); if (i && this.char) i.value = this.char; this.pass(); this.S.save(); } else this.talk(); }
+  toggle(b, q) { this.bytes[b] ^= 128 >> q; play.dot(); if (this.char !== this.aim) this.missed = true; this.S.paint(); if (!this.ok.has(0) && this.char === this.aim) { this.pass(); } else if (this.ok.has(0)) { this.own = this.char || this.own; const i = document.getElementById("own"); if (i && this.char) i.value = this.char; this.talk(); this.S.save(); } else this.talk(); }
   down(p) { const h = this.hit(p); if (h) this.toggle(...h); }
   hover(p) { this.S.over.style.cursor = p && this.hit(p) ? "pointer" : "default"; }
   marks(c) {
@@ -41,7 +43,7 @@ export class Letter extends Chapter {
   }
   key(k) { if (/^Arrow/.test(k)) { this.cur = ((this.cur ?? -1) + (k === "ArrowRight" || k === "ArrowDown" ? 1 : 7)) % 8; this.S.mark(); return true; } if ((k === " " || k === "Enter") && this.cur != null && document.activeElement?.tagName !== "BUTTON") { this.toggle(0, this.cur); return true; } return false; }
   sentence() {
-    const t = this.T; if (this.name === "own") { if (!this.ok.has(this.step)) return t.do.own; const ch = this.char; return ch ? (this.bytes.length > 1 ? t.many(ch, this.bytes.length) : t.one(ch, this.bytes[0])) : t.none; }
+    const t = this.T; if (this.ok.has(0)) { if (!this.own && this.char === "C") return t.done.c; const ch = this.char; return ch ? (this.bytes.length > 1 ? t.many(ch, this.bytes.length) : t.one(ch, this.bytes[0])) : t.none; }
     if (!this.ok.has(this.step) && this.char !== (this.name === "c" ? "A" : "C")) return t.now(this.char || "–") + " " + t.do[this.name]; return null;
   }
 }
